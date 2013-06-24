@@ -1,0 +1,29 @@
+---------------------------------------------------------------------------------
+ZeroMQ Broker Manual
+
+	
+DESCRIPTION
+	ZeroMQ Broker is used to receive messages and forward them to desired targets.
+	
+CONFIGURATION
+	create broker <protocol>://<host>:<port>
+			Creates a broker instance listening on the specified address.
+			Example: tcp://localhost:5000
+			
+	add forwarder <protocol>://<host>:<port>
+			Adds a forwarder
+			Example: tcp://*:5100
+			
+	remove forwarder <protocol>://<host>:<port>
+			Removes the forwarder specified by address.
+			
+	list forwarders
+			Lists all addresses of added forwarders.
+	
+	exit
+			Brings the broker down in a secure way.
+		
+	help
+			This page
+	
+---------------------------------------------------------------------------------

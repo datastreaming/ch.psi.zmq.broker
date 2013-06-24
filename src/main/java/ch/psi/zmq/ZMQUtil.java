@@ -23,24 +23,35 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.process.ShortProcessor;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.jeromq.ZMQ;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ZMQUtil {
 
-	public static ZMQ.Socket connect(ZMQ.Context context, int type, String address) {
+	public static ZMQ.Socket connect(ZMQ.Context context, int type, String address, int highWaterMark) {
 		ZMQ.Socket in = context.socket(type);
+		in.setHWM(highWaterMark);
 		in.connect(address);
 		return in;
 	}
 
-	public static ImagePlusWrapper showImage(String title, byte[] bytes) {
-		ImagePlusWrapper wrapper = showImage(title);
-		wrapper.updateImage(bytes);
-		return wrapper;
+	public static ZMQ.Socket bind(ZMQ.Context context, int type, String address, int highWaterMark) {
+		ZMQ.Socket outSocket = context.socket(type);
+		outSocket.setHWM(highWaterMark);
+		outSocket.setRate(100000);
+		outSocket.bind(address);
+		return outSocket;
 	}
 
 	public static ImagePlusWrapper showImage(String title) {
@@ -53,27 +64,74 @@ public class ZMQUtil {
 		private ImagePlus img;
 		private String title;
 		private int numImageUpdates;
+		private ObjectMapper mapper = new ObjectMapper(new JsonFactory());
+		private int imageSizeY;
+		private int imageSizeX;
 
 		public ImagePlusWrapper(String title) {
 			this.title = title;
 		}
 
-		public void updateImage(byte[] content) {
-			if (content.length != 11059200) {
-				return;
-			}
+		private void readHeader(byte[] h) {
 			try {
-				if (img == null) {
-					img = new ImagePlus(generateTitle(), new ShortProcessor(2560, 2160));
-					img.show();
+				String header = new String(h);
+				// hinfo.setHeader(header);
+				Map<String, Object> m = mapper.readValue(header, new TypeReference<HashMap<String, Object>>() {
+				});
+				if (((List<String>) m.get("htype")).contains("array-1.0")) { // currently
+																				// we
+																				// only
+																				// support
+																				// array-1.0
+																				// message
+																				// types
+					List<Integer> shape = (List<Integer>) m.get("shape");
+					int nImageSizeX = shape.get(1);
+					int nImageSizeY = shape.get(0);
+					if (imageSizeX != nImageSizeX || imageSizeY != nImageSizeY) {
+						imageSizeX = nImageSizeX;
+						imageSizeY = nImageSizeY;
+						if (img != null) {
+							img.close();
+							img = null;
+						}
+					}
+
+					if (img == null) {
+						// TODO eventually use ByteProcessor or BinaryProcessor
+						// BinaryProcessor p = new
+						// ij.process.BinaryProcessor(new
+						// ByteProcessor(imageSizeX, imageSizeY));
+						img = new ImagePlus("", new ShortProcessor(imageSizeX, imageSizeY));
+						img.show();
+					}
+					img.setTitle(header);
+				} else {
+					System.err.println("Header type is not supported ...");
+					if (img != null) {
+						img.close();
+						img = null;
+					}
 				}
-				short[] shorts = new short[content.length / 2];
-				ByteBuffer.wrap(content).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
-				img.getProcessor().setPixels(shorts);
-				img.updateAndDraw();
-				IJ.run(img, "Enhance Contrast", "saturated=0.35");
-				img.setTitle(generateTitle());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		public void updateImage(byte[] header, byte[] content) {
+			readHeader(header);
+			try {
+				if (content != null && img != null) {
+					// TODO Check whether this is needed
+					short[] shorts = new short[content.length / 2];
+					ByteBuffer.wrap(content).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
+					img.getProcessor().setPixels(shorts);
+					IJ.run(img, "Enhance Contrast", "saturated=0.35");
+					img.updateAndDraw();
+					numImageUpdates++;
+				}
 			} catch (Exception ex) {
+				ex.printStackTrace();
 			}
 		}
 

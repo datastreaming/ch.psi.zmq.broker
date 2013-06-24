@@ -19,85 +19,58 @@
 
 package ch.psi.eiger.broker.core;
 
-
+import java.text.MessageFormat;
 import java.util.Dictionary;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 import org.jeromq.ZMQ;
 import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.psi.zmq.ZMQUtil;
 
 /**
  * Use this class for forwarding bytes to a specific socket.
  * 
  * @author meyer_d2
- *
+ * 
  */
-public class Forwarder implements Runnable {
-	
-//	private final Logger log;
+public class Forwarder {
 
-    private final ZMQ.Socket outSocket;
-	
-	private final BlockingQueue<byte[]> queue;
-    
-    /**
-     * @param context {@link Context}
-     * @param type {@link ZMQ}
-     * @param address e.g. "tcp://*:5100"
-     * @param properties Additional configuration.
-     */
-    public Forwarder(Context context, int type, String address, Dictionary<String, String> properties) {		
-        queue = new ArrayBlockingQueue<>(5);
+	private final Logger log;
 
-		outSocket = context.socket(type);
-		outSocket.bind(address);
-//		log = LoggerFactory.getLogger(MessageFormat.format("{0}[{1}:{2}]", Forwarder.class.getName(), type, address));
-	}
+	private final ZMQ.Socket outSocket;
+
+	private String address;
 
 	/**
-	 * Forward passed bytes to the out socket.
-	 * 
-	 * @param bytes Data
+	 * @param context
+	 *            {@link Context}
+	 * @param type
+	 *            {@link ZMQ}
+	 * @param address
+	 *            e.g. "tcp://*:5100"
+	 * @param properties
+	 *            Additional configuration.
 	 */
-	public void forward(byte[] bytes) {
-    	try {
-    		queue.add(bytes);
-    	} catch (IllegalStateException e) {
-//    		log.warn(MessageFormat.format("Queue is full with {0} elements.", queue.size()));
-    	}
-    }
-   
-  
-    @Override
-    public void run() {
-//    	log.info("Started forwarder.");
-
-        while (!Thread.currentThread().isInterrupted()) {
-            try {
-            	byte[] bytes = queue.take();
-//            	log.debug("sending ...");
-                outSocket.send(bytes);
-//            	log.debug("sent.");
-            } catch (ZMQException e) {
-//            	log.error("e");
-                if (ZMQ.Error.ETERM.getCode() == e.getErrorCode()) {
-                    break;
-                }
-                throw e;
-            } 
-            catch (InterruptedException e) {
-//				log.error("", e);
-			}
-        }
-//        outSocket.close();
-    }
-
+	public Forwarder(Context context, int type, String address, Dictionary<String, String> properties) {
+		this.address = address;
+		outSocket = ZMQUtil.bind(context, type, address, 4);
+		log = LoggerFactory.getLogger(MessageFormat.format("{0}[{1}:{2}]", Forwarder.class.getName(), type, address));
+	}
+	
 	/**
 	 * Stops the forwarder.
 	 */
 	public void shutdown() {
 		outSocket.close();
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void send(byte[] data, boolean hasReceiveMore) {
+		outSocket.send(data, hasReceiveMore ? ZMQ.SNDMORE : 0);
 	}
 }

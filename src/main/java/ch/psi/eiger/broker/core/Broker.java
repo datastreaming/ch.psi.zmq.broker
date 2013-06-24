@@ -58,18 +58,24 @@ public class Broker {
 		forwarders = Collections.newSetFromMap(new ConcurrentHashMap<Forwarder, Boolean>());
 
 		context = ZMQ.context(1);
-		in = ZMQUtil.connect(context, ZMQ.PULL, address);
+		in = ZMQUtil.connect(context, ZMQ.PULL, address, 4);
 
 		es.submit(new Runnable() {
 			@Override
 			public void run() {
+
 				while (!Thread.currentThread().isInterrupted()) {
-					byte[] bytes = in.recv();
+					byte[] data = in.recv();					
+					byte[] content = null;
+					boolean hasMore = in.hasReceiveMore();
 					for (Forwarder fw : forwarders) {
-						try {
-							fw.forward(bytes);
-						} catch (Exception e) {
-							log.error("", e);
+						fw.send(data, hasMore);
+					}
+				
+					while(hasMore) {
+						content = in.recv();
+						for (Forwarder fw : forwarders) {
+							fw.send(content, (hasMore = in.hasReceiveMore()));
 						}
 					}
 				}
@@ -88,22 +94,26 @@ public class Broker {
 	 *            Additional configuration.
 	 */
 	public void forwardTo(String address, int type, Dictionary<String, String> properties) {
+		//TODO create threads...
 		Forwarder fw = new Forwarder(context, type, address, properties);
 		forwarders.add(fw);
-		es.submit(fw);
+	}
+	
+	public Set<Forwarder> getForwarders() {
+		return forwarders;
 	}
 
 	/**
 	 * Stops the broker and all forwarders.
 	 */
 	public void shutdown() {
-		es.shutdownNow();
 		for (Forwarder fw : forwarders) {
 			fw.shutdown();
 		}
 
 		in.close();
 		context.term();
+		es.shutdownNow();
 		forwarders.clear();
 	}
 }
