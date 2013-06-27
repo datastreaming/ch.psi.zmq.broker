@@ -16,6 +16,8 @@ import org.jeromq.ZMQ.Socket;
 import ch.psi.zmq.ZMQUtil;
 
 public class FileSender {
+	
+	//{"htype":["array-1.0"],"tag":"","source":"","shape":[456,616] ,"frame":9983,"type":"uint16","endianess":"little"}
 
 	private ExecutorService execService = Executors.newCachedThreadPool();
 
@@ -29,7 +31,7 @@ public class FileSender {
 
 	public void init() {
 		context = ZMQ.context(1);
-		socket = ZMQUtil.bind(context, ZMQ.PUSH, "tcp://*:" + 5000, 10);
+		socket = ZMQUtil.bind(context, ZMQ.PUSH, "tcp://*:" + 8080, 10);
 
 		File folder = new File("C://EigerRawFiles");
 		File[] files = folder.listFiles();
@@ -53,11 +55,18 @@ public class FileSender {
 			}
 		}
 
+		int frame = 1;
 		while (!Thread.currentThread().isInterrupted()) {
 			for (byte[] buf : byteBuffers) {
 				System.out.println("sending... ");
-				socket.sendMore("test");
+				socket.sendMore("{\"htype\":[\"array-1.0\"],\"tag\":\"\",\"source\":\"\",\"shape\":[456,616] ,\"frame\":" + frame++ + ",\"type\":\"uint16\",\"endianess\":\"little\"}");
 				socket.send(buf);
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 	}

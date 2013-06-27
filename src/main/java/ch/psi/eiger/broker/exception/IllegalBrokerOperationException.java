@@ -17,8 +17,17 @@
  * 
  */
 
-package ch.psi.eiger.broker.cmd;
+package ch.psi.eiger.broker.exception;
 
-public class CommandNotFoundException extends Exception {
+
+public class IllegalBrokerOperationException extends BrokerException {
+
+	public IllegalBrokerOperationException(String msg, Throwable e) {
+		super(msg, e);
+	}
+
+	public IllegalBrokerOperationException(String msg) {
+		super(msg);
+	}
 
 }

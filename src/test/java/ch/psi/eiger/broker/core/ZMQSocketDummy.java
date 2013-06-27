@@ -19,24 +19,40 @@
 
 package ch.psi.eiger.broker.core;
 
-import java.util.Hashtable;
+import org.jeromq.ZMQ;
 
-import org.jeromq.ZMQ.Context;
+import zmq.Msg;
+import zmq.Pipe;
+import zmq.SocketBase;
 
-import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
+/**
+ * This is a workaround because there is no interface for a zmq-socket available.
+ * An interface is used to create a mock.
+ * 
+ * @author meyer_d2
+ *
+ */
+public class ZMQSocketDummy extends ZMQ.Socket {
 
-public interface Forwarder {
+	protected static String lastMessage;
 
-	public void configure(Hashtable<String, String> properties) throws ForwarderConfigurationException;
-
-	public void start(Context context);
-
-	public void shutdown();
-
-	public String getAddress();
-
-	public void send(byte[] data, boolean hasReceiveMore, long frameNo);
-
-	public Hashtable<String, String> getProperties();
-
+	protected ZMQSocketDummy() {
+		super(new SocketBase(null, 0, 0) {
+			
+			@Override
+			protected void xterminated(Pipe pipe_) {				
+			}
+			
+			@Override
+			protected void xattach_pipe(Pipe pipe_, boolean icanhasall_) {				
+			}
+			
+		    @Override
+			protected boolean xsend(Msg msg_, int flags_) {
+				lastMessage = new String(msg_.data());
+		    	return true;
+		    }
+		});
+		lastMessage = null;
+	}
 }

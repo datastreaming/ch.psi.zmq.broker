@@ -17,26 +17,11 @@
  * 
  */
 
-package ch.psi.eiger.broker.core;
+package ch.psi.eiger.broker.exception;
 
-import java.util.Hashtable;
+public class CommandNotSupportedException extends BrokerException {
 
-import org.jeromq.ZMQ.Context;
-
-import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
-
-public interface Forwarder {
-
-	public void configure(Hashtable<String, String> properties) throws ForwarderConfigurationException;
-
-	public void start(Context context);
-
-	public void shutdown();
-
-	public String getAddress();
-
-	public void send(byte[] data, boolean hasReceiveMore, long frameNo);
-
-	public Hashtable<String, String> getProperties();
-
+	public CommandNotSupportedException(String msg) {
+		super(msg);
+	}	
 }

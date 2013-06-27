@@ -1,29 +1,74 @@
----------------------------------------------------------------------------------
-ZeroMQ Broker Manual
-
+  _____              __  __  ___    ____            _               __  __                         _ 
+ |__  /___ _ __ ___ |  \/  |/ _ \  | __ ) _ __ ___ | | _____ _ __  |  \/  | __ _ _ __  _   _  __ _| |
+   / // _ \ '__/ _ \| |\/| | | | | |  _ \| '__/ _ \| |/ / _ \ '__| | |\/| |/ _` | '_ \| | | |/ _` | |
+  / /|  __/ | | (_) | |  | | |_| | | |_) | | | (_) |   <  __/ |    | |  | | (_| | | | | |_| | (_| | |
+ /____\___|_|  \___/|_|  |_|\__\_\ |____/|_|  \___/|_|\_\___|_|    |_|  |_|\__,_|_| |_|\__,_|\__,_|_|
+                                                                                                     
 	
 DESCRIPTION
 	ZeroMQ Broker is used to receive messages and forward them to desired targets.
-	
-CONFIGURATION
-	create broker <protocol>://<host>:<port>
-			Creates a broker instance listening on the specified address.
-			Example: tcp://localhost:5000
+
+
+EXAMPLE
+                                                                             _____________
+                                                     ___________             |             | PUSH
+     __________                                     |      ---->|-(C,B,A) >--| Forwarder A |-------------//    _____________
+    |          | PUSH                          POLL |     /     |            |_____________| tcp://*:5100     |             | PUSH
+    |  Source  |-(C,B,A) > -------------------------|  Broker ->|-(C,B,A) >-----------------------------------| Forwarder B |-------------//
+    |__________| tcp://*:8080	 tcp://mpc1572:8080 |           |                                             |_____________| tcp://*:5200
+                                                    |___________| (------ Forwarder n.)
+	                           
+	                           
+
+BROKER COMMANDS
+______________________________________________________________________________________________________________________
+	create broker -address <protocol>://<host>:<port> [-hwm integer]
+		Creates a broker instance listening on the specified address.
+		
+		OPTION
+			-hwm
+				The high water mark is a hard limit on the maximum number of outstanding messages ØMQ shall queue in 
+				memory for any single peer that the specified socket is communicating with.
+		
+		EXAMPLE
+			create broker -address tcp://localhost:5000
+		
 			
-	add forwarder <protocol>://<host>:<port>
+FORWARDER COMMANDS
+______________________________________________________________________________________________________________________
+	add forwarder -address <protocol>://<host>:<port> [-fwTimeInterval integer] [-hwm integer]
 			Adds a forwarder
-			Example: tcp://*:5100
 			
-	remove forwarder <protocol>://<host>:<port>
+		OPTION
+			-fwTimeInterval [ms]
+				....
+			
+			-hwm	
+				The high water mark is a hard limit on the maximum number of outstanding messages ØMQ shall queue in 
+				memory for any single peer that the specified socket is communicating with.
+			
+		EXAMPLE:
+			add forwarder -address tcp://*:5100 -fwTimeInterval 1000
+			
+	remove forwarder -address <protocol>://<host>:<port>
 			Removes the forwarder specified by address.
 			
 	list forwarders
 			Lists all addresses of added forwarders.
-	
+
+GLOBAL COMMANDS
+______________________________________________________________________________________________________________________
 	exit
 			Brings the broker down in a secure way.
 		
 	help
 			This page
+
+______________________________________________________________________________________________________________________
+
+AUTHOR
+	Daniel Meyer, d.meyer@psi.ch
 	
----------------------------------------------------------------------------------
+ORGANISATION
+	Paul Scherrer Institute Switzerland
+	

@@ -17,26 +17,18 @@
  * 
  */
 
-package ch.psi.eiger.broker.core;
+package ch.psi.eiger.broker;
 
-import java.util.Hashtable;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
-import org.jeromq.ZMQ.Context;
+import ch.psi.eiger.broker.core.BrokerTest;
+import ch.psi.eiger.broker.core.ForwarderTest;
 
-import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
-
-public interface Forwarder {
-
-	public void configure(Hashtable<String, String> properties) throws ForwarderConfigurationException;
-
-	public void start(Context context);
-
-	public void shutdown();
-
-	public String getAddress();
-
-	public void send(byte[] data, boolean hasReceiveMore, long frameNo);
-
-	public Hashtable<String, String> getProperties();
+@SuppressWarnings("javadoc")
+@RunWith(Suite.class)
+@SuiteClasses({ BrokerTest.class, ForwarderTest.class })
+public class AllTests {
 
 }

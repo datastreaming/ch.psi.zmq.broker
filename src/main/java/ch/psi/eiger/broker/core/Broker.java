@@ -19,101 +19,81 @@
 
 package ch.psi.eiger.broker.core;
 
-import java.util.Collections;
-import java.util.Dictionary;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Hashtable;
+import java.util.TreeMap;
 
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Socket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import ch.psi.zmq.ZMQUtil;
+import ch.psi.eiger.broker.exception.BrokerConfigurationException;
+import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
 
 /**
- * This broker class allows registering forwarders they notified by any
- * activities on the specified input socket.
+ * 
  * 
  * @author meyer_d2
  * 
  */
-public class Broker {
-
-	private static final Logger log = LoggerFactory.getLogger(Broker.class);
-	private ExecutorService es = Executors.newFixedThreadPool(8);
-	private Context context;
-	private Socket in;
-
-	private Set<Forwarder> forwarders;
+public interface Broker {
 
 	/**
-	 * @param address
-	 *            e.g "tcp://localhost:5000"
+	 * Returns a copy of the internal map with added forwarders.
+	 * 
+	 * @return {@link TreeMap}
 	 */
-	public Broker(final String address) {
-		forwarders = Collections.newSetFromMap(new ConcurrentHashMap<Forwarder, Boolean>());
-
-		context = ZMQ.context(1);
-		in = ZMQUtil.connect(context, ZMQ.PULL, address, 4);
-
-		es.submit(new Runnable() {
-			@Override
-			public void run() {
-
-				while (!Thread.currentThread().isInterrupted()) {
-					byte[] data = in.recv();					
-					byte[] content = null;
-					boolean hasMore = in.hasReceiveMore();
-					for (Forwarder fw : forwarders) {
-						fw.send(data, hasMore);
-					}
-				
-					while(hasMore) {
-						content = in.recv();
-						for (Forwarder fw : forwarders) {
-							fw.send(content, (hasMore = in.hasReceiveMore()));
-						}
-					}
-				}
-			}
-		});
-	}
+	public TreeMap<Integer, Forwarder> getForwarders();
 
 	/**
-	 * Adds a forwarder for the specified address and type.
+	 * 
+	 */
+	public void shutdown();
+
+	/**
+	 * Add a forwarder
+	 * 
+	 * @param forwarder
+	 *            {@link Forwarder}
+	 * @return A unique id that maps to the added forwarder.
+	 */
+	public Integer addForwarder(Forwarder forwarder);
+
+	/**
+	 * Returns a copy of specified properties.
+	 * 
+	 * @return {@link Hashtable}
+	 */
+	public abstract Hashtable<String, String> getProperties();
+
+	/**
+	 * 
+	 */
+	public void start();
+
+	/**
+	 * Configures the forwarder with specified properties.
+	 * 
+	 * @param properties
+	 *            Key value pairs
+	 * @throws BrokerConfigurationException
+	 *             If mandatory parameters are not specified or values are not
+	 *             valid.
+	 */
+	public void configure(Hashtable<String, String> properties) throws BrokerConfigurationException;
+
+	/**
+	 * Removes the forwarder specified by address.
 	 * 
 	 * @param address
-	 *            e.g. "tcp://*:5100"
-	 * @param type
-	 *            {@link ZMQ}
-	 * @param properties
-	 *            Additional configuration.
+	 *            Unique address that identifies a forwarder.
+	 * @throws IllegalBrokerOperationException
+	 *             If there is no broker with the specified address.
 	 */
-	public void forwardTo(String address, int type, Dictionary<String, String> properties) {
-		//TODO create threads...
-		Forwarder fw = new Forwarder(context, type, address, properties);
-		forwarders.add(fw);
-	}
-	
-	public Set<Forwarder> getForwarders() {
-		return forwarders;
-	}
+	public void removeForwarderByAddress(String address) throws IllegalBrokerOperationException;
 
 	/**
-	 * Stops the broker and all forwarders.
+	 * Removes the forwarder specified by id.
+	 * 
+	 * @param fwId
+	 *            Forwarder's id.
+	 * @throws IllegalBrokerOperationException
+	 *             If there is no broker with the specified id.
 	 */
-	public void shutdown() {
-		for (Forwarder fw : forwarders) {
-			fw.shutdown();
-		}
-
-		in.close();
-		context.term();
-		es.shutdownNow();
-		forwarders.clear();
-	}
+	public void removeForwarderById(Integer fwId) throws IllegalBrokerOperationException;
 }

@@ -17,26 +17,15 @@
  * 
  */
 
-package ch.psi.eiger.broker.core;
+package ch.psi.eiger.broker.util;
 
-import java.util.Hashtable;
+import java.lang.reflect.Field;
 
-import org.jeromq.ZMQ.Context;
+public class TestUtil {
 
-import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
-
-public interface Forwarder {
-
-	public void configure(Hashtable<String, String> properties) throws ForwarderConfigurationException;
-
-	public void start(Context context);
-
-	public void shutdown();
-
-	public String getAddress();
-
-	public void send(byte[] data, boolean hasReceiveMore, long frameNo);
-
-	public Hashtable<String, String> getProperties();
-
+	public static void setField(Object targetObject, String fieldName, Object fieldObject) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+		Field field = targetObject.getClass().getDeclaredField(fieldName);
+		field.setAccessible(true);
+		field.set(targetObject, fieldObject);
+	}
 }

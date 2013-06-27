@@ -22,11 +22,22 @@ package ch.psi.eiger.broker.cmd;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.MessageFormat;
+import java.util.Hashtable;
+import java.util.TreeMap;
 
-import org.jeromq.ZMQ;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ch.psi.eiger.broker.core.Broker;
+import ch.psi.eiger.broker.core.BrokerImpl;
 import ch.psi.eiger.broker.core.Forwarder;
+import ch.psi.eiger.broker.core.ForwarderImpl;
+import ch.psi.eiger.broker.exception.BrokerConfigurationException;
+import ch.psi.eiger.broker.exception.BrokerException;
+import ch.psi.eiger.broker.exception.CommandNotSupportedException;
+import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
+import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
 
 /**
  * Use this builder class for creating a broker from command line.
@@ -36,7 +47,7 @@ import ch.psi.eiger.broker.core.Forwarder;
  */
 public final class BrokerEngine {
 
-	private static final String ADDRESS_PATTERN = "(tcp://)[a-z0-9.*]{1,40}(:)[0-9]{4,5}";
+	private static Logger log = LoggerFactory.getLogger(BrokerEngine.class);
 
 	private Command currentCommandState;
 
@@ -69,13 +80,13 @@ public final class BrokerEngine {
 			return name;
 		}
 
-		private static Command findCommand(String name) throws CommandNotFoundException {
+		private static Command findCommand(String name) throws CommandNotSupportedException {
 			for (Command cmd : Command.values()) {
 				if (name.startsWith(cmd.name)) {
 					return cmd;
 				}
 			}
-			throw new CommandNotFoundException();
+			throw new CommandNotSupportedException(MessageFormat.format("Command \"{0}\" is unkown.", name));
 		}
 	}
 
@@ -91,8 +102,11 @@ public final class BrokerEngine {
 	public void start() {
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
 			String in = null;
-			while (!(in = br.readLine().trim()).equals(Command.Exit.name)) {
-				if (in.equals(Command.Help.name)) {
+			while ((in = br.readLine()) != null) {
+				in = in.trim();
+				if (in.equals(Command.Exit.name)) {
+					break;
+				} else if (in.equals(Command.Help.name)) {
 					showHelpFile();
 					writePrompt();
 				} else {
@@ -101,10 +115,11 @@ public final class BrokerEngine {
 				}
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 		}
 
-		broker.shutdown();
+		if (broker != null) {
+			broker.shutdown();
+		}
 		System.out.println("bye");
 	}
 
@@ -118,8 +133,12 @@ public final class BrokerEngine {
 		}
 	}
 
-	private BrokerEngine consume(String in) {
+	private void consume(String in) {
 		try {
+			if (in.length() == 0) {
+				return;
+			}
+
 			currentCommandState = Command.findCommand(in);
 
 			switch (currentCommandState) {
@@ -127,18 +146,25 @@ public final class BrokerEngine {
 				break;
 			case CreateBroker:
 				if (broker != null) {
-					System.out.println("Broker is already created!");
+					System.out.println("Broker was already created!");
 					break;
 				}
 
-				String bAddress = extractParameter(Command.CreateBroker, in);
-
-				if (bAddress.matches(ADDRESS_PATTERN)) {
-					broker = new Broker(bAddress);
+				Hashtable<String, String> brokerProperties = extractProperties(Command.CreateBroker, in);
+				Broker newBroker = null;
+				try {
+					newBroker = new BrokerImpl();
+					newBroker.configure(brokerProperties);
+					broker = newBroker;
+					broker.start();
 					currentCommandState = Command.Start;
-					System.out.println("Successfully created broker.");
-				} else {
-					illegalInput();
+					try {
+						Thread.sleep(1500);
+					} catch (InterruptedException e) {
+					}
+				} catch (BrokerConfigurationException e) {
+					newBroker.shutdown();
+					throw e;
 				}
 				break;
 			case AddForwarder:
@@ -147,45 +173,66 @@ public final class BrokerEngine {
 					break;
 				}
 
-				String fAddress = extractParameter(Command.AddForwarder, in);
+				Hashtable<String, String> fwProperties = extractProperties(Command.AddForwarder, in);
 
-				if (fAddress.matches(ADDRESS_PATTERN)) {
-					broker.forwardTo(fAddress, ZMQ.PUSH, null);
-					currentCommandState = Command.Start;
-					System.out.println("Successfully created forwarding to " + fAddress);
-				} else {
-					illegalInput();
+				Forwarder fw = null;
+				try {
+					fw = new ForwarderImpl();
+					fw.configure(fwProperties);
+					broker.addForwarder(fw);
+					try {
+						Thread.sleep(1500);
+					} catch (InterruptedException e) {
+					}
+				} catch (ForwarderConfigurationException e) {
+					fw.shutdown();
+					throw e;
 				}
 				break;
 			case ListForwarders:
 				if (isForwarderListNotEmpty()) {
-					for (Forwarder fw : broker.getForwarders()) {
-						System.out.println(fw.getAddress());
+					TreeMap<Integer, Forwarder> forwarders = broker.getForwarders();
+					for (Integer id : forwarders.keySet()) {
+						System.out.println(MessageFormat.format("{0}: {1}", id, forwarders.get(id).getProperties()));
 					}
 				}
 				break;
 			case RemoveForwarder:
 				if (isForwarderListNotEmpty()) {
-					String fAddressToRemove = extractParameter(Command.RemoveForwarder, in);
-
-					for (Forwarder fw : broker.getForwarders()) {
-						if (fw.getAddress().equals(fAddressToRemove)) {
-							fw.shutdown();
-							broker.getForwarders().remove(fw);
-							System.out.println("Successfully removed forwarder.");
-							break;
-						}
-					}
+					Hashtable<String, String> properties = extractProperties(Command.RemoveForwarder, in);
+					broker.removeForwarderByAddress(properties.get("address"));
+					System.out.println("Successfully removed forwarder.");
 				}
 			}
-		} catch (CommandNotFoundException e) {
-			illegalInput();
+		} catch (CommandNotSupportedException e) {
+			illegalInput(e.getMessage() + " Type help for getting a list of supported commands.");
+		} catch (IllegalBrokerOperationException | ForwarderConfigurationException | BrokerConfigurationException e) {
+			illegalInput(e.getMessage());
+		} catch (BrokerException e) {
+			log.error("", e);
 		}
-		return this;
 	}
 
-	private String extractParameter(Command cmd, String in) {
-		return in.substring(cmd.name.length()).trim();
+	private Hashtable<String, String> extractProperties(Command cmd, String in) {
+		Hashtable<String, String> config = new Hashtable<>();
+		String parameters = in.substring(cmd.name.length()).trim();
+
+		String[] paramArray = parameters.split("( -)");
+
+		for (int i = 0; i < paramArray.length; i++) {
+			String paramAndValue = paramArray[i];
+			if (paramAndValue.length() == 0) {
+				continue;
+			}
+			int pos = paramAndValue.indexOf(" ");
+			if (pos == -1) {
+				continue;
+			}
+			String param = paramAndValue.substring(1, pos).trim();
+			String value = paramAndValue.substring(pos + 1).trim();
+			config.put(param, value);
+		}
+		return config;
 	}
 
 	private boolean isForwarderListNotEmpty() {
@@ -200,8 +247,8 @@ public final class BrokerEngine {
 		return true;
 	}
 
-	private void illegalInput() {
-		System.out.println("Command not supported. Type help for a list of supported commands.");
+	private void illegalInput(String message) {
+		System.out.println(message);
 	}
 
 	private void writePrompt() {
