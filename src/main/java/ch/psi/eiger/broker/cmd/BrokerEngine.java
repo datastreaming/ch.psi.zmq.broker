@@ -49,6 +49,7 @@ import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
 import ch.psi.eiger.broker.model.BrokerConfig;
 import ch.psi.eiger.broker.model.ForwarderConfig;
 import ch.psi.eiger.broker.server.GrizzlyServer;
+import ch.psi.eiger.broker.webservice.RESTBroker;
 
 /**
  * Use this command line-based builder for creating a broker.
@@ -246,7 +247,7 @@ public final class BrokerEngine {
 								throw new BrokerConfigurationException("Parameter appname is invalid. Make sure that the name contains only characters [a-z].");
 							}
 						}
-						server = new GrizzlyServer("http://localhost/" + webAppName + "/", port);
+						server = new GrizzlyServer("http://localhost/" + webAppName + "/", port, RESTBroker.class.getPackage());
 						server.start();
 					} catch (NumberFormatException e) {
 						throw new BrokerConfigurationException("Parameter port must be an integer.");
@@ -325,14 +326,27 @@ public final class BrokerEngine {
 		System.out.println(message);
 	}
 
+	/**
+	 * Workaround: Register this broker in servlet context!
+	 * 
+	 * @return {@link BrokerEngine}
+	 */
 	public static BrokerEngine getInstance() {
 		return instance;
 	}
 
+	/**
+	 * Returns the broker.
+	 * 
+	 * @return {@link Broker}
+	 */
 	public Broker getBroker() {
 		return broker;
 	}
 
+	/**
+	 * Stops and removes the broker.
+	 */
 	public void shutdownAndRemoveBroker() {
 		if (broker != null) {
 			broker.shutdown();
@@ -340,6 +354,16 @@ public final class BrokerEngine {
 		broker = null;
 	}
 
+	/**
+	 * Creates a broker and returns the instance. The broker is not started
+	 * after this method invocation.
+	 * 
+	 * @param config
+	 *            {@link BrokerConfig}
+	 * @return {@link Broker}
+	 * @throws BrokerConfigurationException
+	 *             If the configuration is not valid.
+	 */
 	public Broker setupAndGetBroker(BrokerConfig config) throws BrokerConfigurationException {
 		Broker newBroker = null;
 		try {

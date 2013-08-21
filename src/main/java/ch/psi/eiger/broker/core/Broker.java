@@ -91,7 +91,20 @@ public interface Broker {
 	 */
 	public void shutdownAndRemoveForwarderById(Integer fwId) throws IllegalBrokerOperationException;
 
+	/**
+	 * @return Returns a unique id.
+	 */
 	public Integer getId();
 
+	/**
+	 * Creates a forwarder based on the specified configuration. The forwarder
+	 * is not started after this method invocation.
+	 * 
+	 * @param config
+	 *            {@link ForwarderConfig}
+	 * @return {@link Forwarder}
+	 * @throws ForwarderConfigurationException
+	 *             If the configuration is not valid.
+	 */
 	public Forwarder setupAndGetForwarder(ForwarderConfig config) throws ForwarderConfigurationException;
 }

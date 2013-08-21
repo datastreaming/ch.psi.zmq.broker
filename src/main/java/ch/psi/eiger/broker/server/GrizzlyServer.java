@@ -49,35 +49,61 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.glassfish.grizzly.http.server.HttpServer;
 
+import ch.psi.eiger.broker.webservice.RESTBroker;
+
 import com.sun.jersey.api.container.grizzly2.servlet.GrizzlyWebContainerFactory;
 
 
+/**
+ * This class contains the minimum for a REST application server.
+ * 
+ * @author meyer_d2
+ * 
+ */
 public class GrizzlyServer {
 
 	private URI baseUri;
 
 	private HttpServer httpServer;
 
-	public GrizzlyServer(String baseUriName, Integer port) throws IOException {
+	private Package packageMarker;
+
+	/**
+	 * Creates a server instance.
+	 * 
+	 * @param baseUriName
+	 *            e.g. http://localhost/brokerengine
+	 * @param port
+	 *            eg. 9999
+	 * @param packageMarker
+	 *            The package in which REST classes are placed.
+	 * @throws IOException
+	 *             If the uri could not be created.
+	 */
+	public GrizzlyServer(String baseUriName, Integer port, Package packageMarker) throws IOException {
 		baseUri = UriBuilder.fromUri(baseUriName).port(port).build();
+		this.packageMarker = packageMarker;
 	}
 
+	@SuppressWarnings("javadoc")
 	public void start() throws IOException {
 		final Map<String, String> initParams = new HashMap<String, String>();
-		initParams.put("com.sun.jersey.config.property.packages", "ch.psi.eiger.broker.webservice");
+		initParams.put("com.sun.jersey.config.property.packages", packageMarker.getName());
 		System.out.println("Starting grizzly...");
 		httpServer = GrizzlyWebContainerFactory.create(baseUri, initParams);
 		System.out.println("Jersey app started with WADL available at " + baseUri + "application.wadl");
 	}
 
+	@SuppressWarnings("javadoc")
 	public void stop() {
 		if (httpServer != null) {
 			httpServer.stop();
 		}
 	}
 	
+	@SuppressWarnings("javadoc")
 	public static void main(String[] args) throws IOException {
-		GrizzlyServer server = new GrizzlyServer("http://localhost/brokerengine/", 9000);
+		GrizzlyServer server = new GrizzlyServer("http://localhost/brokerengine/", 9000, RESTBroker.class.getPackage());
 		server.start();
 		System.out.println("Press enter for stopping...");
 		System.in.read();

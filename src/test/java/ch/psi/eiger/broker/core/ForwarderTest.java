@@ -20,7 +20,6 @@
 package ch.psi.eiger.broker.core;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -130,17 +129,18 @@ public class ForwarderTest {
 		fw.send("d".getBytes(), false, 4);
 		assertThat(new String(queue.take().data), is("d"));
 	}
-
-	@Test
-	public void arbitaryPropertyModificationTest() throws ForwarderConfigurationException {
-		ForwarderConfig config = new ForwarderConfig("tcp://*:8080");
-		Forwarder fw = new ForwarderImpl(null);
-		fw.configure(config);
-
-		config.setAddress("hack");
-
-		assertThat(fw.getConfig().getAddress(), is("tcp://*:8080"));
-
-		assertThat(config, is(not(fw.getConfig())));
-	}
+	//
+	// @Test
+	// public void arbitaryPropertyModificationTest() throws
+	// ForwarderConfigurationException {
+	// ForwarderConfig config = new ForwarderConfig("tcp://*:8080");
+	// Forwarder fw = new ForwarderImpl(null);
+	// fw.configure(config);
+	//
+	// config.setAddress("hack");
+	//
+	// assertThat(fw.getConfig().getAddress(), is("tcp://*:8080"));
+	//
+	// assertThat(config, is(not(fw.getConfig())));
+	// }
 }

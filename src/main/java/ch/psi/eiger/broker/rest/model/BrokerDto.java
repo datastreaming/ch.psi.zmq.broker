@@ -29,6 +29,7 @@ import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+@SuppressWarnings("javadoc")
 @XmlRootElement(name = "Broker")
 public class BrokerDto {
 

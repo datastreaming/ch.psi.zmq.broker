@@ -20,7 +20,6 @@
 package ch.psi.eiger.broker.core;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
@@ -28,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import ch.psi.eiger.broker.exception.BrokerConfigurationException;
-import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
 import ch.psi.eiger.broker.model.BrokerConfig;
 
 @SuppressWarnings("javadoc")
@@ -179,16 +177,17 @@ public class BrokerTest {
 	// broker.shutdown();
 	// }
 
-	@Test
-	public void arbitaryPropertyModificationTest() throws BrokerConfigurationException, IllegalBrokerOperationException {
-		BrokerConfig config = new BrokerConfig("tcp://*:8080");
-		Broker broker = new BrokerImpl();
-		broker.configure(config);
-		
-		config.setAddress("hack");
-
-		assertThat(broker.getConfig().getAddress(), is("tcp://*:8080"));
-
-		assertThat(config, is(not(broker.getConfig())));
-	}
+	// @Test
+	// public void arbitaryPropertyModificationTest() throws
+	// BrokerConfigurationException, IllegalBrokerOperationException {
+	// BrokerConfig config = new BrokerConfig("tcp://*:8080");
+	// Broker broker = new BrokerImpl();
+	// broker.configure(config);
+	//
+	// config.setAddress("hack");
+	//
+	// assertThat(broker.getConfig().getAddress(), is("tcp://*:8080"));
+	//
+	// assertThat(config, is(not(broker.getConfig())));
+	// }
 }

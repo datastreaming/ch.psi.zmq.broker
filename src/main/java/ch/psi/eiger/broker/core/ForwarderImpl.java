@@ -69,6 +69,9 @@ public class ForwarderImpl implements Forwarder {
 
 	/**
 	 * Default constructor.
+	 * 
+	 * @param context
+	 *            {@link Context}
 	 */
 	public ForwarderImpl(Context context) {
 		this.context = context;
@@ -188,24 +191,18 @@ public class ForwarderImpl implements Forwarder {
 	public static class DataContainer {
 		byte[] data;
 		boolean hasReceiveMore;
-		private long internalFrameNo;
 
 		static DataContainer holdTogether(byte[] data, boolean hasReceiveMore, long internalFrameNo) {
 			DataContainer container = new DataContainer();
 			container.data = data;
 			container.hasReceiveMore = hasReceiveMore;
-			container.internalFrameNo = internalFrameNo;
 			return container;
 		}
 	}
 
 	@Override
 	public ForwarderConfig getConfig() {
-		try {
-			return (ForwarderConfig) config.clone();
-		} catch (CloneNotSupportedException e) {
-			return null;
-		}
+		return new ForwarderConfig(config);
 	}
 
 	@Override

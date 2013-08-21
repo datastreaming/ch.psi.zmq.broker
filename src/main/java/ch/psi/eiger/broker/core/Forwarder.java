@@ -80,8 +80,16 @@ public interface Forwarder {
 	 */
 	public void shutdown();
 
+	/**
+	 * @return A unique id.
+	 */
 	public Integer getId();
 
+	/**
+	 * Returns the current mode for frame reduction.
+	 * 
+	 * @return {@link Mode}
+	 */
 	public Mode getMode();
 
 	/**

@@ -23,9 +23,16 @@ import java.util.Hashtable;
 import java.util.Objects;
 
 import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
+import ch.psi.eiger.broker.rest.model.BrokerDto;
 import ch.psi.eiger.broker.rest.model.ForwarderDto;
 
-public class ForwarderConfig implements Cloneable {
+/**
+ * This class defines the configuration model for a forwarder.
+ * 
+ * @author meyer_d2
+ * 
+ */
+public class ForwarderConfig {
 
 	private String address;
 
@@ -33,9 +40,16 @@ public class ForwarderConfig implements Cloneable {
 
 	private Long fwTimeInterval;
 
+	@SuppressWarnings("javadoc")
 	public ForwarderConfig() {
 	}
 
+	/**
+	 * @param properties
+	 *            Parameter and value map as configuration.
+	 * @throws ForwarderConfigurationException
+	 *             If the configuration is not valid.
+	 */
 	public ForwarderConfig(Hashtable<String, String> properties) throws ForwarderConfigurationException {
 		try {
 			Objects.requireNonNull(properties, "Configuration cannot be null.");
@@ -63,57 +77,95 @@ public class ForwarderConfig implements Cloneable {
 		}
 	}
 
+	/**
+	 * @param address
+	 *            Host and port.
+	 */
 	public ForwarderConfig(String address) {
 		this.address = address;
 	}
 
+	/**
+	 * @param address
+	 *            Host and port
+	 * @param hwm
+	 *            High water mark value.
+	 */
 	public ForwarderConfig(String address, Integer hwm) {
 		this(address);
 		this.hwm = hwm;
 	}
 
+	/**
+	 * Copy constructor.
+	 * 
+	 * @param config
+	 *            Configuration object that has to be copied.
+	 */
 	public ForwarderConfig(ForwarderConfig config) {
 		address = config.address;
 		hwm = config.hwm;
 	}
 
+	/**
+	 * @param address
+	 *            Host and port
+	 * @param hwm
+	 *            High water mark value.
+	 * @param fwTimeInterval
+	 *            Frame reduction value e.g. the value 1000 will pass every
+	 *            second a frame.
+	 */
 	public ForwarderConfig(String address, Integer hwm, Long fwTimeInterval) {
 		this(address, hwm);
 		this.fwTimeInterval = fwTimeInterval;
 	}
 
+	/**
+	 * Creates a configuration based on the data transfer object.
+	 * 
+	 * @param dto
+	 *            {@link BrokerDto}
+	 */
 	public ForwarderConfig(ForwarderDto dto) {
 		address = dto.address;
 		hwm = dto.hwm;
 		fwTimeInterval = dto.fwTimeInterval;
 	}
 
+	/**
+	 * @return Returns host and port.
+	 */
 	public String getAddress() {
 		return address;
 	}
 
-	public void setAddress(String address) {
-		this.address = address;
-	}
-
+	/**
+	 * @return High water mark.
+	 */
 	public Integer getHwm() {
 		return hwm;
 	}
 
+	/**
+	 * Sets a new high water mark. Has only an impact as long as the broker is
+	 * not started.
+	 * 
+	 * @param hwm
+	 *            High water mark.
+	 */
 	public void setHwm(Integer hwm) {
 		this.hwm = hwm;
 	}
 
+	/**
+	 * Returns the frame reduction value in milliseconds.
+	 * 
+	 * E.g. a value of 2500 will pass after 2.5 seconds a frame.
+	 * 
+	 * @return value in milliseconds.
+	 */
 	public Long getFwTimeInterval() {
 		return fwTimeInterval;
-	}
-
-	public void setFwTimeInterval(Long fwTimeInterval) {
-		this.fwTimeInterval = fwTimeInterval;
-	}
-
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		return super.clone();
 	}
 }
