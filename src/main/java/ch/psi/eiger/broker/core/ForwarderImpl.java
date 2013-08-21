@@ -20,10 +20,11 @@
 package ch.psi.eiger.broker.core;
 
 import java.text.MessageFormat;
-import java.util.Hashtable;
-import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.jeromq.ZMQ;
 import org.jeromq.ZMQ.Context;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
+import ch.psi.eiger.broker.model.ForwarderConfig;
 import ch.psi.zmq.ZMQUtil;
 
 /**
@@ -41,87 +43,112 @@ import ch.psi.zmq.ZMQUtil;
  */
 public class ForwarderImpl implements Forwarder {
 
-	static final String ADDRESS_PATTERN = "(tcp://)[a-z0-9.*-]{1,40}(:)[0-9]{4,5}";
+	private Logger LOG = LoggerFactory.getLogger(ForwarderImpl.class);
 
-	private Logger log = LoggerFactory.getLogger(ForwarderImpl.class);
+	static final String ADDRESS_PATTERN = "(tcp://)[a-zA-Z0-9.*-]{1,200}(:)[0-9]{4,5}";
+
+	private static Integer nextId = 1;
 
 	private ZMQ.Socket outSocket;
 
-	private Hashtable<String, String> config;
+	private ForwarderConfig config;
 
 	private volatile boolean isRunning;
-	
+
 	private volatile Mode mode;
-	
+
 	private Timer timer;
 
-	public ForwarderImpl() {
-		mode = Mode.PassThroughAny;
+	private ExecutorService pool;
+
+	private ArrayBlockingQueue<DataContainer> sendQueue;
+
+	private Integer id;
+
+	private Context context;
+
+	/**
+	 * Default constructor.
+	 */
+	public ForwarderImpl(Context context) {
+		this.context = context;
+		mode = Mode.PassAnyFramesThrough;
+		pool = Executors.newFixedThreadPool(1);
+		sendQueue = new ArrayBlockingQueue<>(5, true);
+		id = nextId++;
 	}
 
 	@Override
-	public void configure(Hashtable<String, String> config) throws ForwarderConfigurationException {
-		try {
-			Objects.requireNonNull(config, "Configuration cannot be null.");
-			Objects.requireNonNull(config.get("address"), "Parameter \"address\" could not be found.");
-		} catch (NullPointerException e) {
-			throw new ForwarderConfigurationException(e.getMessage(), e);
+	public void configure(ForwarderConfig config) throws ForwarderConfigurationException {
+		if (config == null) {
+			throw new ForwarderConfigurationException("Configuration cannot be null");
 		}
 
-		if (!config.get("address").matches(ADDRESS_PATTERN)) {
+		if (config.getAddress() == null || !config.getAddress().matches(ADDRESS_PATTERN)) {
 			throw new ForwarderConfigurationException("Address is not valid.");
 		}
 
-		if (config.containsKey("hwm")) {
-			try {
-				Integer.parseInt(config.get("hwm"));
-
-			} catch (NumberFormatException e) {
-				throw new ForwarderConfigurationException("The value of high water mark must be an integer.", e);
-			}
+		if (config.getHwm() != null && config.getHwm() < 1) {
+			throw new ForwarderConfigurationException("High water mark cannot be lower than one.");
 		}
 		
-		if (config.containsKey("fwTimeInterval")) {
-			try {
-				Long.parseLong(config.get("fwTimeInterval"));
-				mode = Mode.Ignore;
-			} catch (NumberFormatException e) {
-				throw new ForwarderConfigurationException("The value for the forwarding interval must be a long.", e);
-			}
+		if (config.getFwTimeInterval() != null) {
+			mode = Mode.IgnoreFrame;
 		}
+		
+		this.config = new ForwarderConfig(config);
 
-		log = LoggerFactory.getLogger(MessageFormat.format("{0}[{1}:{2}]", ForwarderImpl.class.getName(), ZMQ.PUSH, config.get("address")));
-
-		this.config = new Hashtable<>();
-		this.config.put("hwm", "4");
-		log.debug(MessageFormat.format("Set default high water mark to {0}.", this.config.get("hwm")));
-
-		this.config.putAll(config);
+		if (this.config.getHwm() == null) {
+			this.config.setHwm(4);
+			LOG.debug(MessageFormat.format("Set default high water mark to {0}.", this.config.getHwm()));
+		}
+		LOG.debug(MessageFormat.format("Configured forwarder with parameters: {0}.", this.config));
 	}
 
 	@Override
-	public void start(Context context) {
-		isRunning = true;
-		outSocket = ZMQUtil.bind(context, ZMQ.PUSH, config.get("address"), Integer.parseInt(config.get("hwm")));
-		log.info("Initialized ZMQ socket connection.");
+	public void start() {
+		outSocket = ZMQUtil.bind(context, ZMQ.PUSH, config.getAddress(), config.getHwm());
+		LOG.info("Initialized ZMQ socket connection.");
 
-		if (config.containsKey("fwTimeInterval")) {
+		if (config.getFwTimeInterval() != null) {
 			timer = new Timer();
 
-			Long timeInMs = Long.parseLong(config.get("fwTimeInterval"));
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
-					log.debug("Pass through next data package.");
-					mode = Mode.PassThroughNextDataPackage;
+					LOG.debug("Pass next frame through.");
+					mode = Mode.PassNextFrameThrough;
 				}
-			}, 0, timeInMs);
+			}, 0, config.getFwTimeInterval());
 		}
-		log.info("Forwarder is now online.");
+
+		pool.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					while (!Thread.currentThread().isInterrupted()) {
+						DataContainer dc = sendQueue.take();
+						outSocket.send(dc.data, dc.hasReceiveMore ? ZMQ.SNDMORE : 0);
+					}
+				} catch (InterruptedException e) {
+				}
+			}
+		});
+
+		isRunning = true;
+
+		LOG.info("Forwarder is now online.");
 	}
 
 	@Override
 	public void shutdown() {
+		isRunning = false;
+
+		pool.shutdownNow();
+
+		sendQueue.clear();
+
 		if (isRunning) {
 			outSocket.close();
 		}
@@ -129,34 +156,65 @@ public class ForwarderImpl implements Forwarder {
 		if (timer != null) {
 			timer.cancel();
 		}
-		isRunning = false;
 	}
 
 	@Override
 	public String getAddress() {
-		return config.get("address");
+		return config.getAddress();
 	}
 
 	@Override
-	public void send(byte[] data, boolean hasReceiveMore, long frameNo) {
-		if (isRunning && mode != Mode.Ignore) {
-			// log.debug(MessageFormat.format("Send frame #{0}.", frameNo));
-			outSocket.send(data, hasReceiveMore ? ZMQ.SNDMORE : 0);
-			if (mode == Mode.PassThroughNextDataPackage && !hasReceiveMore) {
-				mode = Mode.Ignore;
+	public void send(byte[] data, boolean hasReceiveMore, long internalFrameNo) {
+		try {
+			if (isRunning && mode != Mode.IgnoreFrame) {
+				sendQueue.put(DataContainer.holdTogether(data, hasReceiveMore, internalFrameNo));
+				if (mode == Mode.PassNextFrameThrough) {
+					mode = Mode.IgnoreFrame;
+				}
+			} else if (isRunning) {
+				LOG.debug(MessageFormat.format("Ignore frame {0}.", internalFrameNo));
 			}
+		} catch (InterruptedException e) {
+			LOG.warn("", e);
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public Hashtable<String, String> getProperties() {
-		return (Hashtable<String, String>) config.clone();
+	/**
+	 * Do not need this class! It is public only for JUnit
+	 * 
+	 * @author meyer_d2
+	 * 
+	 */
+	public static class DataContainer {
+		byte[] data;
+		boolean hasReceiveMore;
+		private long internalFrameNo;
+
+		static DataContainer holdTogether(byte[] data, boolean hasReceiveMore, long internalFrameNo) {
+			DataContainer container = new DataContainer();
+			container.data = data;
+			container.hasReceiveMore = hasReceiveMore;
+			container.internalFrameNo = internalFrameNo;
+			return container;
+		}
 	}
 
-	public static enum Mode {
-		PassThroughAny,
-		PassThroughNextDataPackage,
-		Ignore;
+	@Override
+	public ForwarderConfig getConfig() {
+		try {
+			return (ForwarderConfig) config.clone();
+		} catch (CloneNotSupportedException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public Integer getId() {
+		return id;
+	}
+
+	@Override
+	public Mode getMode() {
+		return mode;
 	}
 }

@@ -23,10 +23,13 @@ import java.util.Hashtable;
 import java.util.TreeMap;
 
 import ch.psi.eiger.broker.exception.BrokerConfigurationException;
+import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
 import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
+import ch.psi.eiger.broker.model.BrokerConfig;
+import ch.psi.eiger.broker.model.ForwarderConfig;
 
 /**
- * 
+ * Defines the minimum of functionality for a broker.
  * 
  * @author meyer_d2
  * 
@@ -46,36 +49,27 @@ public interface Broker {
 	public void shutdown();
 
 	/**
-	 * Add a forwarder
-	 * 
-	 * @param forwarder
-	 *            {@link Forwarder}
-	 * @return A unique id that maps to the added forwarder.
-	 */
-	public Integer addForwarder(Forwarder forwarder);
-
-	/**
 	 * Returns a copy of specified properties.
 	 * 
 	 * @return {@link Hashtable}
 	 */
-	public abstract Hashtable<String, String> getProperties();
+	public abstract BrokerConfig getConfig();
 
 	/**
-	 * 
+	 * Starts the broker.
 	 */
 	public void start();
 
 	/**
-	 * Configures the forwarder with specified properties.
+	 * Configures the broker with specified properties.
 	 * 
-	 * @param properties
-	 *            Key value pairs
+	 * @param config
+	 *            Broker's configuration
 	 * @throws BrokerConfigurationException
 	 *             If mandatory parameters are not specified or values are not
 	 *             valid.
 	 */
-	public void configure(Hashtable<String, String> properties) throws BrokerConfigurationException;
+	public void configure(BrokerConfig config) throws BrokerConfigurationException;
 
 	/**
 	 * Removes the forwarder specified by address.
@@ -85,7 +79,7 @@ public interface Broker {
 	 * @throws IllegalBrokerOperationException
 	 *             If there is no broker with the specified address.
 	 */
-	public void removeForwarderByAddress(String address) throws IllegalBrokerOperationException;
+	public void shutdownAndRemoveForwarderByAddress(String address) throws IllegalBrokerOperationException;
 
 	/**
 	 * Removes the forwarder specified by id.
@@ -95,5 +89,9 @@ public interface Broker {
 	 * @throws IllegalBrokerOperationException
 	 *             If there is no broker with the specified id.
 	 */
-	public void removeForwarderById(Integer fwId) throws IllegalBrokerOperationException;
+	public void shutdownAndRemoveForwarderById(Integer fwId) throws IllegalBrokerOperationException;
+
+	public Integer getId();
+
+	public Forwarder setupAndGetForwarder(ForwarderConfig config) throws ForwarderConfigurationException;
 }

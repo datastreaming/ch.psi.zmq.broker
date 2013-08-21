@@ -19,12 +19,22 @@
 
 package ch.psi.eiger.broker.exception;
 
-public class BrokerException extends Exception {
+/**
+ * Base class for any domain specific exceptions.
+ * 
+ * @author meyer_d2
+ * 
+ */
+public abstract class BrokerException extends Exception {
 
+	private static final long serialVersionUID = 9165579807227752263L;
+
+	@SuppressWarnings("javadoc")
 	public BrokerException(String msg, Throwable e) {
 		super(msg, e);
 	}
 
+	@SuppressWarnings("javadoc")
 	public BrokerException(String msg) {
 		super(msg);
 	}

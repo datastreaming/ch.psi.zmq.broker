@@ -19,40 +19,33 @@
 
 package ch.psi.eiger.broker.core;
 
-import org.jeromq.ZMQ;
+import java.io.IOException;
 
-import zmq.Msg;
-import zmq.Pipe;
-import zmq.SocketBase;
+import jline.TerminalFactory;
+import jline.console.ConsoleReader;
+import jline.console.completer.StringsCompleter;
 
-/**
- * This is a workaround because there is no interface for a zmq-socket available.
- * An interface is used to create a mock.
- * 
- * @author meyer_d2
- *
- */
-public class ZMQSocketDummy extends ZMQ.Socket {
+public class TestJLine {
 
-	protected static String lastMessage;
+	public static void main(String[] args) {
+		try {
+			ConsoleReader console = new ConsoleReader();
+			console.addCompleter(new StringsCompleter("add forwarder", "create broker", "remove forwarder"));
 
-	protected ZMQSocketDummy() {
-		super(new SocketBase(null, 0, 0) {
-			
-			@Override
-			protected void xterminated(Pipe pipe_) {				
+			console.setPrompt("prompt> ");
+			String line = null;
+			while ((line = console.readLine()) != null) {
+				console.println(line);
 			}
-			
-			@Override
-			protected void xattach_pipe(Pipe pipe_, boolean icanhasall_) {				
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				TerminalFactory.get().restore();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-			
-		    @Override
-			protected boolean xsend(Msg msg_, int flags_) {
-				lastMessage = new String(msg_.data());
-		    	return true;
-		    }
-		});
-		lastMessage = null;
+		}
 	}
+
 }

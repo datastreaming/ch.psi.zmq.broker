@@ -21,20 +21,15 @@ package ch.psi.eiger.broker.core;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import java.util.Hashtable;
-
-import org.jeromq.ZMQ.Context;
 import org.junit.Before;
 import org.junit.Test;
 
 import ch.psi.eiger.broker.exception.BrokerConfigurationException;
-import ch.psi.eiger.broker.exception.BrokerException;
+import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
+import ch.psi.eiger.broker.model.BrokerConfig;
 
 @SuppressWarnings("javadoc")
 public class BrokerTest {
@@ -44,19 +39,18 @@ public class BrokerTest {
 	}
 
 	@Test
-	public void newBrokerTest() throws BrokerException {
+	public void newBrokerTest() {
 		BrokerImpl broker = new BrokerImpl();
 		broker.shutdown();
 	}
 
-	@Test(expected = BrokerException.class)
-	public void missingAddressTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		Broker broker = null;
+	@Test(expected = BrokerConfigurationException.class)
+	public void missingAddressTest() throws BrokerConfigurationException {
+		BrokerConfig config = new BrokerConfig(null, null);
+		Broker broker = new BrokerImpl();
 		try {
-			broker = new BrokerImpl();
-			broker.configure(properties);
-		} catch (BrokerException e) {
+			broker.configure(config);
+		} catch (BrokerConfigurationException e) {
 			broker.shutdown();
 			throw e;
 		}
@@ -64,13 +58,12 @@ public class BrokerTest {
 	
 
 	@Test(expected = BrokerConfigurationException.class)
-	public void invalidAddressTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "invalid");
+	public void invalidAddressTest() throws BrokerConfigurationException {
+		BrokerConfig config = new BrokerConfig("invalid");
 		Broker broker = null;
 		try {
 			broker = new BrokerImpl();
-			broker.configure(properties);
+			broker.configure(config);
 		} catch (BrokerConfigurationException e) {
 			assertThat(e.getMessage().toLowerCase().contains("address"), is(true));
 			broker.shutdown();
@@ -79,14 +72,13 @@ public class BrokerTest {
 	}
 	
 	@Test(expected = BrokerConfigurationException.class)
-	public void invalidHighWaterMarkTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "tcp://*:8080");
-		properties.put("hwm", "10x");
+	public void invalidHighWaterMarkTest() throws BrokerConfigurationException {
+		BrokerConfig config = new BrokerConfig("tcp://*:8080");
+		config.setHwm(-1);
 		Broker broker = null;
 		try {
 			broker = new BrokerImpl();
-			broker.configure(properties);
+			broker.configure(config);
 		} catch (BrokerConfigurationException e) {
 			assertThat(e.getMessage().toLowerCase().contains("high water mark"), is(true));
 			broker.shutdown();
@@ -95,108 +87,108 @@ public class BrokerTest {
 	}
 	
 	@Test
-	public void successfullInstantiationAndConfigurationTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "tcp://*:8080");
+	public void successfullInstantiationAndConfigurationTest() throws BrokerConfigurationException {
+		BrokerConfig config = new BrokerConfig("tcp://*:8080");
 		Broker broker = new BrokerImpl();
-		broker.configure(properties);
+		broker.configure(config);
+
+		config = broker.getConfig();
 		
 		assertThat(broker.getForwarders().isEmpty(), is(true));
-		assertThat(broker.getProperties().containsKey("address"), is(true));
-		assertThat(broker.getProperties().containsKey("hwm"), is(true));
-		assertThat(broker.getProperties().get("hwm"), is("4"));
+		assertThat(config.getAddress(), is("tcp://*:8080"));
+		assertThat(config.getHwm(), is(notNullValue()));
+		assertThat(config.getHwm(), is(4));
 		
 		broker.shutdown();
 	}
 	
 	@Test
-	public void overrideHighWaterMarkTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "tcp://*:8080");
-		properties.put("hwm", "6");
+	public void overrideHighWaterMarkTest() throws BrokerConfigurationException {
+		BrokerConfig config = new BrokerConfig("tcp://*:8080", 7);
 		Broker broker = new BrokerImpl();
-		broker.configure(properties);
+		broker.configure(config);
+		assertThat(broker.getConfig().getHwm(), is(7));
+		broker.shutdown();
+	}
+	
+	
+	// @Test
+	// public void addAndRemoveForwarderTest() throws
+	// BrokerConfigurationException, IllegalBrokerOperationException {
+	// BrokerConfig config = new BrokerConfig("tcp://*:8080");
+	// Broker broker = new BrokerImpl();
+	// broker.configure(config);
+	//
+	// Forwarder fw1 = mock(Forwarder.class);
+	// when(fw1.getId()).thenReturn(1);
+	// Forwarder fw2 = mock(Forwarder.class);
+	// when(fw2.getId()).thenReturn(2);
+	//
+	// broker.addForwarder(fw1);
+	// assertThat(broker.getForwarders().size(), is(1));
+	//
+	// broker.addForwarder(fw2);
+	// assertThat(broker.getForwarders().size(), is(2));
+	//
+	// broker.shutdownAndRemoveForwarderById(fw1.getId());
+	// assertThat(broker.getForwarders().size(), is(1));
+	//
+	// assertThat(broker.getForwarders().values().iterator().next(), is(fw2));
+	//
+	// broker.shutdown();
+	// }
+	//
+	// @Test
+	// public void addAndRemoveForwarderByAddressTest() throws
+	// BrokerConfigurationException, IllegalBrokerOperationException {
+	// BrokerConfig config = new BrokerConfig("tcp://*:8080");
+	// Broker broker = new BrokerImpl();
+	// broker.configure(config);
+	//
+	// Forwarder fw1 = mock(Forwarder.class);
+	// when(fw1.getAddress()).thenReturn("tcp://*:5000");
+	// when(fw1.getId()).thenReturn(1);
+	// Forwarder fw2 = mock(Forwarder.class);
+	// when(fw2.getAddress()).thenReturn("tcp://*:5100");
+	// when(fw2.getId()).thenReturn(2);
+	//
+	// broker.addForwarder(fw1);
+	// assertThat(broker.getForwarders().size(), is(1));
+	//
+	// broker.addForwarder(fw2);
+	// assertThat(broker.getForwarders().size(), is(2));
+	//
+	// broker.shutdownAndRemoveForwarderByAddress("tcp://*:5000");
+	// assertThat(broker.getForwarders().size(), is(1));
+	//
+	// assertThat(broker.getForwarders().values().iterator().next(), is(fw2));
+	//
+	// broker.shutdown();
+	// }
+	//
+	// @Test
+	// public void isForwarderStartedAfterAddingTest() throws
+	// BrokerConfigurationException, IllegalBrokerOperationException {
+	// BrokerConfig config = new BrokerConfig("tcp://*:8080");
+	// Broker broker = new BrokerImpl();
+	// broker.configure(config);
+	//
+	// Forwarder fw1 = mock(Forwarder.class);
+	// broker.addForwarder(fw1);
+	// verify(fw1).start(any(Context.class));
+	// broker.shutdown();
+	// }
 
-		assertThat(broker.getProperties().get("hwm"), is("6"));
-		
-		broker.shutdown();
-	}
-	
-	
 	@Test
-	public void addAndRemoveForwarderTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "tcp://*:8080");
+	public void arbitaryPropertyModificationTest() throws BrokerConfigurationException, IllegalBrokerOperationException {
+		BrokerConfig config = new BrokerConfig("tcp://*:8080");
 		Broker broker = new BrokerImpl();
-		broker.configure(properties);
+		broker.configure(config);
 		
-		Forwarder fw1 = mock(Forwarder.class);
-		Forwarder fw2 = mock(Forwarder.class);
-		
-		Integer fwId1 = broker.addForwarder(fw1);
-		assertThat(broker.getForwarders().size(), is(1));
-		
-		broker.addForwarder(fw2);
-		assertThat(broker.getForwarders().size(), is(2));
-		
-		broker.removeForwarderById(fwId1);
-		assertThat(broker.getForwarders().size(), is(1));
-		
-		assertThat(broker.getForwarders().values().iterator().next(), is(fw2));
-		
-		broker.shutdown();
-	}
-	
-	@Test
-	public void addAndRemoveForwarderByAddressTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "tcp://*:8080");
-		Broker broker = new BrokerImpl();
-		broker.configure(properties);
-		
-		Forwarder fw1 = mock(Forwarder.class);
-		when(fw1.getAddress()).thenReturn("tcp://*:5000");
-		Forwarder fw2 = mock(Forwarder.class);
-		when(fw2.getAddress()).thenReturn("tcp://*:5100");
-		
-		broker.addForwarder(fw1);
-		assertThat(broker.getForwarders().size(), is(1));
-		
-		broker.addForwarder(fw2);
-		assertThat(broker.getForwarders().size(), is(2));
-		
-		broker.removeForwarderByAddress("tcp://*:5000");
-		assertThat(broker.getForwarders().size(), is(1));
-		
-		assertThat(broker.getForwarders().values().iterator().next(), is(fw2));
-		
-		broker.shutdown();
-	}
-	
-	@Test
-	public void isForwarderStartedAfterAddingTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "tcp://*:8080");
-		Broker broker = new BrokerImpl();
-		broker.configure(properties);
-		
-		Forwarder fw1 = mock(Forwarder.class);
-		broker.addForwarder(fw1);
-		verify(fw1).start(any(Context.class));		
-		broker.shutdown();
-	}
+		config.setAddress("hack");
 
-	@Test
-	public void arbitaryPropertyModificationTest() throws BrokerException {
-		Hashtable<String, String> properties = new Hashtable<>();
-		properties.put("address", "tcp://*:8080");
-		Broker broker = new BrokerImpl();
-		broker.configure(properties);
-		
-		properties.put("hack", "super");
+		assertThat(broker.getConfig().getAddress(), is("tcp://*:8080"));
 
-		assertThat(broker.getProperties().containsKey("hack"), is(false));
-
-		assertThat(properties, is(not(broker.getProperties())));
+		assertThat(config, is(not(broker.getConfig())));
 	}
 }

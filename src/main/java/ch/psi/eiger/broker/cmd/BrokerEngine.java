@@ -1,3 +1,4 @@
+// $codepro.audit.disable
 /**
  * 
  * Copyright 2013 Paul Scherrer Institute. All rights reserved.
@@ -22,9 +23,18 @@ package ch.psi.eiger.broker.cmd;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.TreeMap;
+
+import jline.console.ConsoleReader;
+import jline.console.completer.StringsCompleter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,26 +42,35 @@ import org.slf4j.LoggerFactory;
 import ch.psi.eiger.broker.core.Broker;
 import ch.psi.eiger.broker.core.BrokerImpl;
 import ch.psi.eiger.broker.core.Forwarder;
-import ch.psi.eiger.broker.core.ForwarderImpl;
 import ch.psi.eiger.broker.exception.BrokerConfigurationException;
-import ch.psi.eiger.broker.exception.BrokerException;
 import ch.psi.eiger.broker.exception.CommandNotSupportedException;
 import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
 import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
+import ch.psi.eiger.broker.model.BrokerConfig;
+import ch.psi.eiger.broker.model.ForwarderConfig;
+import ch.psi.eiger.broker.server.GrizzlyServer;
 
 /**
- * Use this builder class for creating a broker from command line.
+ * Use this command line-based builder for creating a broker.
  * 
  * @author meyer_d2
  * 
  */
 public final class BrokerEngine {
 
-	private static Logger log = LoggerFactory.getLogger(BrokerEngine.class);
+	private final static Logger LOG = LoggerFactory.getLogger(BrokerEngine.class);
+
+	private static BrokerEngine instance;
 
 	private Command currentCommandState;
 
 	private Broker broker;
+
+	private GrizzlyServer server;
+
+	static {
+		instance = new BrokerEngine();
+	}
 
 	private enum Command {
 
@@ -64,6 +83,10 @@ public final class BrokerEngine {
 		ListForwarders("list forwarders"),
 
 		RemoveForwarder("remove forwarder"),
+
+		EnableRESTInterface("enable rest interface"),
+
+		DisableRESTInterface("disable rest interface"),
 
 		Exit("exit"),
 
@@ -90,37 +113,68 @@ public final class BrokerEngine {
 		}
 	}
 
-	@SuppressWarnings("javadoc")
-	public BrokerEngine() {
+	private BrokerEngine() {
 		currentCommandState = Command.Start;
-		writePrompt();
 	}
 
 	/**
-	 * Starts the command line
+	 * Starts the command line reader.
 	 */
 	public void start() {
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+		try {
+			processConfigFile();
+
+			ConsoleReader console = new ConsoleReader();
+			console.setPrompt("ZeroMQ Broker> ");
+			console.addCompleter(new StringsCompleter(Command.EnableRESTInterface.name + " -port", Command.DisableRESTInterface.name, Command.CreateBroker.name, Command.CreateBroker.name + " -address tcp://:", Command.AddForwarder.name, Command.AddForwarder.name + " -address tcp://:",
+					Command.ListForwarders.name, Command.RemoveForwarder.name, Command.RemoveForwarder.name
+							+ " -address ", Command.Exit.name));
+
 			String in = null;
-			while ((in = br.readLine()) != null) {
+			while ((in = console.readLine()) != null) {
 				in = in.trim();
 				if (in.equals(Command.Exit.name)) {
 					break;
 				} else if (in.equals(Command.Help.name)) {
 					showHelpFile();
-					writePrompt();
 				} else {
 					consume(in);
-					writePrompt();
 				}
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
+			LOG.error("", e);
 		}
 
 		if (broker != null) {
 			broker.shutdown();
 		}
+
+		if (server != null) {
+			server.stop();
+		}
+
 		System.out.println("bye");
+	}
+
+	private void processConfigFile() {
+		String fileLocation = System.getProperty("configFile");
+		if (fileLocation != null) {
+			Path path = Paths.get(fileLocation);
+			if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+				try {
+					List<String> lines = Files.readAllLines(path, Charset.defaultCharset());
+					for (String line : lines) {
+						consume(line);
+					}
+				} catch (IOException e) {
+					LOG.error("", e);
+				}
+			} else {
+				LOG.warn(MessageFormat.format("Could not find specified config file {0}.", fileLocation));
+			}
+		} else {
+			LOG.info("Configuration file not specified. Add -DconfigFile <path> to configure broker automatically.");
+		}
 	}
 
 	private void showHelpFile() {
@@ -129,7 +183,8 @@ public final class BrokerEngine {
 			while ((line = br.readLine()) != null) {
 				System.out.println(line);
 			}
-		} catch (IOException e1) {
+		} catch (IOException e) {
+			LOG.error("", e);
 		}
 	}
 
@@ -150,22 +205,8 @@ public final class BrokerEngine {
 					break;
 				}
 
-				Hashtable<String, String> brokerProperties = extractProperties(Command.CreateBroker, in);
-				Broker newBroker = null;
-				try {
-					newBroker = new BrokerImpl();
-					newBroker.configure(brokerProperties);
-					broker = newBroker;
-					broker.start();
-					currentCommandState = Command.Start;
-					try {
-						Thread.sleep(1500);
-					} catch (InterruptedException e) {
-					}
-				} catch (BrokerConfigurationException e) {
-					newBroker.shutdown();
-					throw e;
-				}
+				setupAndGetBroker(extractAndValidateBrokerProperties(in)).start();
+
 				break;
 			case AddForwarder:
 				if (broker == null) {
@@ -173,44 +214,77 @@ public final class BrokerEngine {
 					break;
 				}
 
-				Hashtable<String, String> fwProperties = extractProperties(Command.AddForwarder, in);
+				broker.setupAndGetForwarder(extractAndValidateForwarderProperties(in)).start();
 
-				Forwarder fw = null;
-				try {
-					fw = new ForwarderImpl();
-					fw.configure(fwProperties);
-					broker.addForwarder(fw);
-					try {
-						Thread.sleep(1500);
-					} catch (InterruptedException e) {
-					}
-				} catch (ForwarderConfigurationException e) {
-					fw.shutdown();
-					throw e;
-				}
 				break;
 			case ListForwarders:
 				if (isForwarderListNotEmpty()) {
 					TreeMap<Integer, Forwarder> forwarders = broker.getForwarders();
 					for (Integer id : forwarders.keySet()) {
-						System.out.println(MessageFormat.format("{0}: {1}", id, forwarders.get(id).getProperties()));
+						System.out.println(MessageFormat.format("{0}: {1}", id, forwarders.get(id).getConfig()));
 					}
 				}
 				break;
 			case RemoveForwarder:
 				if (isForwarderListNotEmpty()) {
 					Hashtable<String, String> properties = extractProperties(Command.RemoveForwarder, in);
-					broker.removeForwarderByAddress(properties.get("address"));
+					broker.shutdownAndRemoveForwarderByAddress(properties.get("address"));
 					System.out.println("Successfully removed forwarder.");
 				}
+				break;
+			case EnableRESTInterface:
+				Hashtable<String, String> properties = extractProperties(Command.EnableRESTInterface, in);
+				if (properties.containsKey("port")) {
+					try {
+						Integer port = Integer.parseInt(properties.get("port"));
+
+						String webAppName = "brokerengine";
+						if (properties.containsKey("appname")) {
+							if (properties.get("appname").matches("[a-z]{1,}")) {
+								webAppName = properties.get("appname");
+							} else {
+								throw new BrokerConfigurationException("Parameter appname is invalid. Make sure that the name contains only characters [a-z].");
+							}
+						}
+						server = new GrizzlyServer("http://localhost/" + webAppName + "/", port);
+						server.start();
+					} catch (NumberFormatException e) {
+						throw new BrokerConfigurationException("Parameter port must be an integer.");
+					} catch (IOException e) {
+						LOG.error("", e);
+						if (server != null) {
+							GrizzlyServer server = this.server;
+							this.server = null;
+							server.stop();
+						}
+					}
+				} else {
+					throw new BrokerConfigurationException("Please specifiy port.");
+				}
+
+				break;
+			case DisableRESTInterface:
+				if (server != null) {
+					server.stop();
+					server = null;
+				}
+				break;
 			}
 		} catch (CommandNotSupportedException e) {
 			illegalInput(e.getMessage() + " Type help for getting a list of supported commands.");
 		} catch (IllegalBrokerOperationException | ForwarderConfigurationException | BrokerConfigurationException e) {
 			illegalInput(e.getMessage());
-		} catch (BrokerException e) {
-			log.error("", e);
 		}
+	}
+
+	private BrokerConfig extractAndValidateBrokerProperties(String in) throws BrokerConfigurationException {
+		Hashtable<String, String> properties = extractProperties(Command.CreateBroker, in);
+		return new BrokerConfig(properties);
+	}
+
+	private ForwarderConfig extractAndValidateForwarderProperties(String in) throws ForwarderConfigurationException {
+		Hashtable<String, String> properties = extractProperties(Command.AddForwarder, in);
+		return new ForwarderConfig(properties);
 	}
 
 	private Hashtable<String, String> extractProperties(Command cmd, String in) {
@@ -228,7 +302,7 @@ public final class BrokerEngine {
 			if (pos == -1) {
 				continue;
 			}
-			String param = paramAndValue.substring(1, pos).trim();
+			String param = paramAndValue.substring(paramAndValue.startsWith("-") ? 1 : 0, pos).trim();
 			String value = paramAndValue.substring(pos + 1).trim();
 			config.put(param, value);
 		}
@@ -251,7 +325,37 @@ public final class BrokerEngine {
 		System.out.println(message);
 	}
 
-	private void writePrompt() {
-		System.out.print("ZeroMQ Broker> ");
+	public static BrokerEngine getInstance() {
+		return instance;
+	}
+
+	public Broker getBroker() {
+		return broker;
+	}
+
+	public void shutdownAndRemoveBroker() {
+		if (broker != null) {
+			broker.shutdown();
+		}
+		broker = null;
+	}
+
+	public Broker setupAndGetBroker(BrokerConfig config) throws BrokerConfigurationException {
+		Broker newBroker = null;
+		try {
+			newBroker = new BrokerImpl();
+			newBroker.configure(config);
+			broker = newBroker;
+			currentCommandState = Command.Start;
+			try {
+				Thread.sleep(1500);
+			} catch (InterruptedException e) {
+				LOG.error("", e);
+			}
+		} catch (BrokerConfigurationException e) {
+			newBroker.shutdown();
+			throw e;
+		}
+		return broker;
 	}
 }

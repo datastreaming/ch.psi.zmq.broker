@@ -19,8 +19,17 @@
 
 package ch.psi.eiger.broker.exception;
 
+/**
+ * Use this exception if the input string cannot be mapped to a command.
+ * 
+ * @author meyer_d2
+ * 
+ */
 public class CommandNotSupportedException extends BrokerException {
 
+	private static final long serialVersionUID = -777816665659549453L;
+
+	@SuppressWarnings("javadoc")
 	public CommandNotSupportedException(String msg) {
 		super(msg);
 	}	

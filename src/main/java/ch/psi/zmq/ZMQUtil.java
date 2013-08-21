@@ -37,6 +37,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@SuppressWarnings("javadoc")
 public class ZMQUtil {
 
 	public static ZMQ.Socket connect(ZMQ.Context context, int type, String address, int highWaterMark) {
@@ -54,11 +55,14 @@ public class ZMQUtil {
 		return outSocket;
 	}
 
+	@Deprecated
 	public static ImagePlusWrapper showImage(String title) {
 		ImagePlusWrapper wrapper = new ImagePlusWrapper(title);
 		return wrapper;
 	}
 
+	@Deprecated
+	// FIXME the protocol has been changed.
 	public static class ImagePlusWrapper {
 
 		private ImagePlus img;

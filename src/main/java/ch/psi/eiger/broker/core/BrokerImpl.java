@@ -20,9 +20,6 @@
 package ch.psi.eiger.broker.core;
 
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutorService;
@@ -35,8 +32,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.psi.eiger.broker.exception.BrokerConfigurationException;
-import ch.psi.eiger.broker.exception.BrokerException;
+import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
 import ch.psi.eiger.broker.exception.IllegalBrokerOperationException;
+import ch.psi.eiger.broker.model.BrokerConfig;
+import ch.psi.eiger.broker.model.ForwarderConfig;
 import ch.psi.zmq.ZMQUtil;
 
 /**
@@ -48,70 +47,71 @@ import ch.psi.zmq.ZMQUtil;
  */
 public class BrokerImpl implements Broker {
 
-	private static final Logger log = LoggerFactory.getLogger(BrokerImpl.class);
+	private static final Logger LOG = LoggerFactory.getLogger(BrokerImpl.class);
 
-	private static final String ADDRESS_PATTERN = "(tcp://)[a-z0-9.*-]{1,40}(:)[0-9]{4,5}";
+	private static Integer nextId = 1;
+
+	private final String ADDRESS_PATTERN = "(tcp://)[a-zA-Z0-9.*-]{1,200}(:)[0-9]{4,5}";
 
 	private ExecutorService executorService;
+
 	private Context context;
+
 	private Socket in;
 
-	private Integer fwId;
-
 	private ConcurrentSkipListMap<Integer, Forwarder> forwarders;
-	private Hashtable<String, String> config;
 
 	private boolean isRunning;
 
+	private BrokerConfig config;
+
+	private Integer id;
+
 	/**
-	 * @throws BrokerException
-	 *             {@link BrokerException}
+	 * Default constructor.
 	 */
-	public BrokerImpl() throws BrokerException {
+	public BrokerImpl() {
 		forwarders = new ConcurrentSkipListMap<>();
-		fwId = 0;
+		id = nextId++;
 	}
 
 	@Override
-	public void configure(Hashtable<String, String> config) throws BrokerConfigurationException {
-		try {
-			Objects.requireNonNull(config, "Configuration cannot be null.");
-			Objects.requireNonNull(config.get("address"), "Parameter \"address\" could not be found.");
-		} catch (NullPointerException e) {
-			throw new BrokerConfigurationException(e.getMessage(), e);
+	public void configure(BrokerConfig config) throws BrokerConfigurationException {
+		if (config == null) {
+			throw new BrokerConfigurationException("Configuration cannot be null");
 		}
 
-		if (!config.get("address").matches(ADDRESS_PATTERN)) {
+		if (config.getAddress() == null || !config.getAddress().matches(ADDRESS_PATTERN)) {
 			throw new BrokerConfigurationException("Address is not valid.");
 		}
-
-		if (config.get("hwm") != null) {
-			try {
-				Integer.parseInt(config.get("hwm"));
-
-			} catch (NumberFormatException e) {
-				throw new BrokerConfigurationException("The value of high water mark must be an integer.", e);
-			}
+		
+		if (config.getHwm() != null && config.getHwm() < 1) {
+			throw new BrokerConfigurationException("High water mark cannot be lower than one.");
 		}
 
-		this.config = new Hashtable<>();
-		this.config.put("hwm", "4");
-		log.debug(MessageFormat.format("Set default high water mark to {0}.", this.config.get("hwm")));
+		this.config = new BrokerConfig(config);
 
-		this.config.putAll(config);
-		log.debug(MessageFormat.format("Configured broker with parameters: {0}.", config));
+		if (this.config.getHwm() == null) {
+			this.config.setHwm(4);
+			LOG.debug(MessageFormat.format("Set default high water mark to {0}.", this.config.getHwm()));
+		}
+		LOG.debug(MessageFormat.format("Configured broker with parameters: {0}.", this.config));
 	}
 
 	@Override
 	public void start() {
+		initCore();
+	}
+
+	private void initCore() {
 		isRunning = true;
 
 		executorService = Executors.newFixedThreadPool(8);
-		log.info("Initialized executor service.");
+		LOG.info("Initialized executor service.");
 
 		context = ZMQ.context(1);
-		in = ZMQUtil.connect(context, ZMQ.PULL, config.get("address"), Integer.parseInt(config.get("hwm")));
-		log.info("Initialized ZMQ socket connection.");
+		in = ZMQUtil.connect(context, ZMQ.PULL, config.getAddress(), config.getHwm());
+		LOG.info("Initialized ZMQ socket connection.");
 
 		executorService.submit(new Runnable() {
 
@@ -119,7 +119,7 @@ public class BrokerImpl implements Broker {
 
 			@Override
 			public void run() {
-				log.info("Broker is now online.");
+				LOG.info("Broker is now online.");
 
 				while (!Thread.currentThread().isInterrupted()) {
 					byte[] data = in.recv();
@@ -141,17 +141,20 @@ public class BrokerImpl implements Broker {
 		});
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public TreeMap<Integer, Forwarder> getForwarders() {
 		if (forwarders == null) {
-			return (TreeMap<Integer, Forwarder>) Collections.EMPTY_MAP;
+			return new TreeMap<>();
 		}
 		return new TreeMap<>(forwarders);
 	}
 
 	@Override
 	public void shutdown() {
+		shutdownCore();
+	}
+
+	private void shutdownCore() {
 		for (Forwarder fw : forwarders.values()) {
 			fw.shutdown();
 		}
@@ -164,31 +167,22 @@ public class BrokerImpl implements Broker {
 			try {
 				executorService.shutdownNow();
 			} catch (Exception e) {
-				log.error("", e);
+				LOG.error("", e);
 			}
 		}
 		isRunning = false;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Hashtable<String, String> getProperties() {
-		return (Hashtable<String, String>) config.clone();
+	public BrokerConfig getConfig() {
+		return new BrokerConfig(config);
 	}
 
 	@Override
-	public Integer addForwarder(Forwarder forwarder) {
-		forwarder.start(context);
-		Integer newId = ++fwId;
-		forwarders.put(newId, forwarder);
-		return newId;
-	}
-
-	@Override
-	public void removeForwarderByAddress(String address) throws IllegalBrokerOperationException {
+	public void shutdownAndRemoveForwarderByAddress(String address) throws IllegalBrokerOperationException {
 		if (address == null) {
 			throw new IllegalBrokerOperationException("Address is null.");
-		} else if (!config.get("address").matches(ForwarderImpl.ADDRESS_PATTERN)) {
+		} else if (!config.getAddress().matches(ForwarderImpl.ADDRESS_PATTERN)) {
 			throw new IllegalBrokerOperationException("Address is not valid.");
 		}
 
@@ -204,13 +198,41 @@ public class BrokerImpl implements Broker {
 	}
 
 	@Override
-	public void removeForwarderById(Integer fwId) throws IllegalBrokerOperationException {
+	public void shutdownAndRemoveForwarderById(Integer fwId) throws IllegalBrokerOperationException {
 		if (fwId == null) {
 			throw new IllegalBrokerOperationException("Id is null.");
 		}
 
-		if (forwarders.remove(fwId) == null) {
+		Forwarder fw = forwarders.remove(fwId);
+
+		if (fw == null) {
 			throw new IllegalBrokerOperationException("Could not find a forwarder with specified id.");
 		}
+
+		fw.shutdown();
+	}
+
+	@Override
+	public Integer getId() {
+		return id;
+	}
+
+	@Override
+	public Forwarder setupAndGetForwarder(ForwarderConfig config) throws ForwarderConfigurationException {
+		Forwarder fw = null;
+		try {
+			fw = new ForwarderImpl(context);
+			fw.configure(config);
+			forwarders.put(fw.getId(), fw);
+			try {
+				Thread.sleep(1500);
+			} catch (InterruptedException e) {
+				LOG.error("", e);
+			}
+		} catch (ForwarderConfigurationException e) {
+			fw.shutdown();
+			throw e;
+		}
+		return fw;
 	}
 }

@@ -21,22 +21,88 @@ package ch.psi.eiger.broker.core;
 
 import java.util.Hashtable;
 
-import org.jeromq.ZMQ.Context;
-
 import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
+import ch.psi.eiger.broker.model.ForwarderConfig;
 
+/**
+ * Defines the minimum of functionality for a forwarder.
+ * 
+ * @author meyer_d2
+ * 
+ */
 public interface Forwarder {
 
-	public void configure(Hashtable<String, String> properties) throws ForwarderConfigurationException;
+	/**
+	 * Configures the forwarder with specified properties.
+	 * 
+	 * @param config
+	 *            Forwarder's configuration
+	 * @throws ForwarderConfigurationException
+	 *             If mandatory parameters are not specified or values are not
+	 *             valid.
+	 */
+	public void configure(ForwarderConfig config) throws ForwarderConfigurationException;
 
-	public void start(Context context);
+	/**
+	 * Starts the forwarder.
+	 * 
+	 */
+	public void start();
 
-	public void shutdown();
-
+	/**
+	 * Returns the socket address.
+	 * 
+	 * @return E.g. tcp://*:5100
+	 */
 	public String getAddress();
 
+	/**
+	 * Forwards bytes to the socket.
+	 * 
+	 * @param data
+	 *            Received bytes.
+	 * @param hasReceiveMore
+	 *            true if the frame contains of multiple data packages.
+	 * @param frameNo
+	 *            Internal frame number.
+	 */
 	public void send(byte[] data, boolean hasReceiveMore, long frameNo);
 
-	public Hashtable<String, String> getProperties();
+	/**
+	 * Returns a copy of the configuration.
+	 * 
+	 * @return {@link Hashtable }
+	 */
+	public ForwarderConfig getConfig();
+
+	/**
+	 * Brings the forwarder down in a secure way.
+	 */
+	public void shutdown();
+
+	public Integer getId();
+
+	public Mode getMode();
+
+	/**
+	 * Is used to support frame reduction.
+	 * 
+	 * @author meyer_d2
+	 * 
+	 */
+	public static enum Mode {
+		/**
+		 * Default mode, pass any frames through.
+		 */
+		PassAnyFramesThrough,
+		/**
+		 * Pass only next frame through.
+		 */
+		PassNextFrameThrough,
+		/**
+		 * Ignore received frame.
+		 */
+		IgnoreFrame;
+	}
 
 }

@@ -28,4 +28,10 @@ public class TestUtil {
 		field.setAccessible(true);
 		field.set(targetObject, fieldObject);
 	}
+
+	public static <T> T getField(Class<T> clazz, Object targetObject, String fieldName) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+		Field field = targetObject.getClass().getDeclaredField(fieldName);
+		field.setAccessible(true);
+		return (T) field.get(targetObject);
+	}
 }

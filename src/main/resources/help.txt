@@ -8,6 +8,12 @@
 DESCRIPTION
 	ZeroMQ Broker is used to receive messages and forward them to desired targets.
 
+	Configuration File
+		You can start this broker with a configuration file by adding -DconfigFile=broker.cfg. 
+		Each line in this configuration file represents a command.
+	
+	Logback Configuration File
+		You can override the default configuration for logging events by adding -DlogbackConfiguration=logback.xml.
 
 EXAMPLE
                                                                              _____________
@@ -17,19 +23,38 @@ EXAMPLE
     |  Source  |-(C,B,A) > -------------------------|  Broker ->|-(C,B,A) >-----------------------------------| Forwarder B |-------------//
     |__________| tcp://*:8080	 tcp://mpc1572:8080 |           |                                             |_____________| tcp://*:5200
                                                     |___________| (------ Forwarder n.)
-	                           
-	                           
+
+REST Interface
+______________________________________________________________________________________________________________________
+	enable rest interface -port <port> [-appname string]
+		Enables REST interface for broker.
+
+		OPTION
+			-appname
+				The name of the web application
+				
+				Default: brokerengine
+
+		EXAMPLE
+			enable rest interface -appname mybroker -port 9000
+			
+			Starts REST interface with WADL available at http://localhost:9000/mybroker/application.wadl
+		
+	disable rest interface
+		Disables REST interface for broker.                       
 
 BROKER COMMANDS
 ______________________________________________________________________________________________________________________
 	create broker -address <protocol>://<host>:<port> [-hwm integer]
 		Creates a broker instance listening on the specified address.
-		
+				
 		OPTION
 			-hwm
 				The high water mark is a hard limit on the maximum number of outstanding messages ØMQ shall queue in 
 				memory for any single peer that the specified socket is communicating with.
-		
+				
+				Default: 4
+					
 		EXAMPLE
 			create broker -address tcp://localhost:5000
 		
@@ -46,6 +71,8 @@ ________________________________________________________________________________
 			-hwm	
 				The high water mark is a hard limit on the maximum number of outstanding messages ØMQ shall queue in 
 				memory for any single peer that the specified socket is communicating with.
+				
+				DEFAULT: 4
 			
 		EXAMPLE:
 			add forwarder -address tcp://*:5100 -fwTimeInterval 1000

@@ -19,15 +19,24 @@
 
 package ch.psi.eiger.broker.exception;
 
-
+/**
+ * Use this exception if an operation is not allowed or not possible in the
+ * current state.
+ * 
+ * @author meyer_d2
+ * 
+ */
 public class IllegalBrokerOperationException extends BrokerException {
 
+	private static final long serialVersionUID = -2820664563996700281L;
+
+	@SuppressWarnings("javadoc")
 	public IllegalBrokerOperationException(String msg, Throwable e) {
 		super(msg, e);
 	}
 
+	@SuppressWarnings("javadoc")
 	public IllegalBrokerOperationException(String msg) {
 		super(msg);
 	}
-
 }

@@ -32,10 +32,7 @@ public final class CMDBroker {
 	@SuppressWarnings("javadoc")
 	public static void main(String[] args) throws InterruptedException, IOException {
 		System.out.println("Command Line Interface");
-		new CMDBroker();
-	}
 
-	private CMDBroker() throws IOException {
-		new BrokerEngine().start();
+		BrokerEngine.getInstance().start();
 	}
 }

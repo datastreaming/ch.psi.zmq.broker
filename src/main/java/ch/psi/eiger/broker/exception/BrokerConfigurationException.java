@@ -19,13 +19,22 @@
 
 package ch.psi.eiger.broker.exception;
 
-
+/**
+ * Use this exception if a parameter is invalid.
+ * 
+ * @author meyer_d2
+ * 
+ */
 public class BrokerConfigurationException extends BrokerException {
 
+	private static final long serialVersionUID = 8042398553133273188L;
+
+	@SuppressWarnings("javadoc")
 	public BrokerConfigurationException(String msg, Throwable e) {
 		super(msg, e);
 	}
 
+	@SuppressWarnings("javadoc")
 	public BrokerConfigurationException(String msg) {
 		super(msg);
 	}
