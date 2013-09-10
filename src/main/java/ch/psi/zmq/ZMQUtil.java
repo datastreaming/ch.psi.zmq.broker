@@ -26,7 +26,6 @@ import ij.process.ShortProcessor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +75,7 @@ public class ZMQUtil {
 			this.title = title;
 		}
 
+		@SuppressWarnings("unchecked")
 		private void readHeader(byte[] h) {
 			try {
 				String header = new String(h);
@@ -137,10 +137,6 @@ public class ZMQUtil {
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
-		}
-
-		private String generateTitle() {
-			return MessageFormat.format("{0}: Frame#: {1}", title, numImageUpdates++);
 		}
 	}
 }

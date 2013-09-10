@@ -21,6 +21,7 @@ package ch.psi.eiger.broker.util;
 
 import java.lang.reflect.Field;
 
+@SuppressWarnings("javadoc")
 public class TestUtil {
 
 	public static void setField(Object targetObject, String fieldName, Object fieldObject) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
@@ -29,6 +30,7 @@ public class TestUtil {
 		field.set(targetObject, fieldObject);
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T> T getField(Class<T> clazz, Object targetObject, String fieldName) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
 		Field field = targetObject.getClass().getDeclaredField(fieldName);
 		field.setAccessible(true);

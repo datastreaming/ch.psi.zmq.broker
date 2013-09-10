@@ -89,6 +89,7 @@ public class ForwarderTest {
 
 		TestUtil.setField(fw, "isRunning", true);
 
+		@SuppressWarnings("unchecked")
 		final ArrayBlockingQueue<DataContainer> queue = TestUtil.getField(ArrayBlockingQueue.class, fw, "sendQueue");
 
 		fw.send("a".getBytes(), false, 1);
@@ -111,6 +112,7 @@ public class ForwarderTest {
 
 		TestUtil.setField(fw, "isRunning", true);
 
+		@SuppressWarnings("unchecked")
 		final ArrayBlockingQueue<DataContainer> queue = TestUtil.getField(ArrayBlockingQueue.class, fw, "sendQueue");
 
 		fw.send("a".getBytes(), false, 1);
@@ -129,18 +131,5 @@ public class ForwarderTest {
 		fw.send("d".getBytes(), false, 4);
 		assertThat(new String(queue.take().data), is("d"));
 	}
-	//
-	// @Test
-	// public void arbitaryPropertyModificationTest() throws
-	// ForwarderConfigurationException {
-	// ForwarderConfig config = new ForwarderConfig("tcp://*:8080");
-	// Forwarder fw = new ForwarderImpl(null);
-	// fw.configure(config);
-	//
-	// config.setAddress("hack");
-	//
-	// assertThat(fw.getConfig().getAddress(), is("tcp://*:8080"));
-	//
-	// assertThat(config, is(not(fw.getConfig())));
-	// }
+
 }

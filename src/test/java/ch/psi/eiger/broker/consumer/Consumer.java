@@ -6,6 +6,7 @@ import org.jeromq.ZMQ;
 import ch.psi.zmq.ZMQUtil;
 import ch.psi.zmq.ZMQUtil.ImagePlusWrapper;
 
+@SuppressWarnings("javadoc")
 public class Consumer {
 	
 	public static void main(String[] args) throws IOException {

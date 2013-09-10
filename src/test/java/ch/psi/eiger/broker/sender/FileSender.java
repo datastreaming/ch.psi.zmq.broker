@@ -5,9 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.jeromq.ZMQ;
 import org.jeromq.ZMQ.Context;
@@ -15,11 +12,10 @@ import org.jeromq.ZMQ.Socket;
 
 import ch.psi.zmq.ZMQUtil;
 
+@SuppressWarnings("javadoc")
 public class FileSender {
 	
 	//{"htype":["array-1.0"],"tag":"","source":"","shape":[456,616] ,"frame":9983,"type":"uint16","endianess":"little"}
-
-	private ExecutorService execService = Executors.newCachedThreadPool();
 
 	public static void main(String[] args) {
 		FileSender sender = new FileSender();
@@ -41,9 +37,7 @@ public class FileSender {
 		int i = 0;
 		for (File file : files) {
 			try (FileInputStream fis = new FileInputStream(file)) {
-				FileChannel fileChannel = fis.getChannel();
 				ByteBuffer buf = ByteBuffer.allocate(11059200);
-				int bytes = fileChannel.read(buf);
 				buf.flip();
 				byteBuffers[i] = buf.array();
 			} catch (FileNotFoundException e) {
