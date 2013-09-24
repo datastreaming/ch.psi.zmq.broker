@@ -8,7 +8,7 @@ ZMQ broker for routing ZMQ messages. Currently only PUSH/PULL is supported.
         +--------------+                    +---------------+    +----->PULL| destination 1  |
         |              |                    |               |    |          |                |
         | source       |                    | broker        |    |          +----------------+
-        |              |PUSH+---------->PULL|               |PUSH+
+        |              |PUSH+---------->PULL|               |PUSH+                 ...
         |              |                    |               |    |          +----------------+
         +--------------+                    +---------------+    |          |                |
                                                                  +----->PULL| destination 2  |
