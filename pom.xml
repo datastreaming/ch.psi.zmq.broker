@@ -39,12 +39,6 @@
 			<version>0.2.0</version>
 			<scope>compile</scope>
 		</dependency>
-		<!-- <dependency>
-			<groupId>gov.nih.imagej</groupId>
-			<artifactId>imagej</artifactId>
-			<version>1.46</version>
-			<scope>compile</scope>
-		</dependency> -->
 
 		<!-- WEB Services -->
 		<dependency>
@@ -80,37 +74,18 @@
 			<scope>test</scope>
 		</dependency>
 		
-		<!-- Logging -->
-		<!-- <dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.0.13</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-core</artifactId>
-			<version>1.0.13</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.5</version>
-			<scope>compile</scope>
-		</dependency> -->
-		
 		<!-- Testing  -->
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
 			<version>1.9.5</version>
-			<scope>compile</scope>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
+			<scope>test</scope>
 		</dependency>
 
 		<!-- Console -->
