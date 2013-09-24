@@ -2,7 +2,7 @@
 # Overview
 ZMQ broker for routing ZMQ messages. Currently only PUSH/PULL is supported.
 
-``
+<pre>
                                                                             +----------------+
                                                                             |                |
         +--------------+                    +---------------+    +----->PULL| destination 1  |
@@ -14,7 +14,7 @@ ZMQ broker for routing ZMQ messages. Currently only PUSH/PULL is supported.
                                                                  +----->PULL| destination 2  |
                                                                             |                |
                                                                             +----------------+
-``
+<pre>
 
 To start the broker use `java -Xmx1024m -jar ch.psi.zmq.broker.jar yourConfigFile.xml`
 
@@ -23,7 +23,7 @@ To terminate the broker use `ctrl+c`. If it does not with the first `ctrl+c` (no
 ## Configuration
 The broker is configured via a xml configuration file. The content of the configuration is as follows:
 
-``
+<pre>
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<routing name="">
@@ -32,7 +32,7 @@ The broker is configured via a xml configuration file. The content of the config
 		<destination address="tcp://*:9091"/>
 	</routing>
 </configuration>
-``
+</pre>
 
 You can specify (zero,) one or more destinations.
 
