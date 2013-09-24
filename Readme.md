@@ -37,4 +37,6 @@ The broker is configured via a xml configuration file. The content of the config
 You can specify (zero,) one or more destinations.
 
 ## Development
+ZMQ Broker is based on https://github.com/zeromq/jeromq the Java implementation of ZMQ.
+
 To build the broker jar use `mvn clean compile assembly:single`
