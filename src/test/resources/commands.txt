@@ -1,3 +1,0 @@
-//		BrokerFacade bf = new BrokerFacade("tcp://localhost:5000");
-//		bf.forwardTo("tcp://*:5100", ZMQ.PUSH, null);
-//		bf.forwardTo("tcp://*:5200", ZMQ.PUSH, null);
