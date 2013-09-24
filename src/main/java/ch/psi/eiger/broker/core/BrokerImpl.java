@@ -24,12 +24,12 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jeromq.ZMQ;
 import org.jeromq.ZMQ.Context;
 import org.jeromq.ZMQ.Socket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ch.psi.eiger.broker.exception.BrokerConfigurationException;
 import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
@@ -47,8 +47,9 @@ import ch.psi.zmq.ZMQUtil;
  */
 public class BrokerImpl implements Broker {
 
-	private static final Logger LOG = LoggerFactory.getLogger(BrokerImpl.class);
-
+	
+	private static final Logger logger = Logger.getLogger(BrokerImpl.class.getName());
+	
 	private static Integer nextId = 1;
 
 	private final String ADDRESS_PATTERN = "(tcp://)[a-zA-Z0-9.*-]{1,200}(:)[0-9]{4,5}";
@@ -93,9 +94,9 @@ public class BrokerImpl implements Broker {
 
 		if (this.config.getHwm() == null) {
 			this.config.setHwm(4);
-			LOG.debug(MessageFormat.format("Set default high water mark to {0}.", this.config.getHwm()));
+			logger.fine(MessageFormat.format("Set default high water mark to {0}.", this.config.getHwm()));
 		}
-		LOG.debug(MessageFormat.format("Configured broker with parameters: {0}.", this.config));
+		logger.fine(MessageFormat.format("Configured broker with parameters: {0}.", this.config));
 	}
 
 	@Override
@@ -107,11 +108,11 @@ public class BrokerImpl implements Broker {
 		isRunning = true;
 
 		executorService = Executors.newFixedThreadPool(8);
-		LOG.info("Initialized executor service.");
+		logger.info("Initialized executor service.");
 
 		context = ZMQ.context(1);
 		in = ZMQUtil.connect(context, ZMQ.PULL, config.getAddress(), config.getHwm());
-		LOG.info("Initialized ZMQ socket connection.");
+		logger.info("Initialized ZMQ socket connection.");
 
 		executorService.submit(new Runnable() {
 
@@ -119,7 +120,7 @@ public class BrokerImpl implements Broker {
 
 			@Override
 			public void run() {
-				LOG.info("Broker is now online.");
+				logger.info("Broker is now online.");
 
 				while (!Thread.currentThread().isInterrupted()) {
 					byte[] data = in.recv();
@@ -167,7 +168,7 @@ public class BrokerImpl implements Broker {
 			try {
 				executorService.shutdownNow();
 			} catch (Exception e) {
-				LOG.error("", e);
+				logger.log(Level.WARNING, "", e);
 			}
 		}
 		isRunning = false;
@@ -227,7 +228,7 @@ public class BrokerImpl implements Broker {
 			try {
 				Thread.sleep(1500);
 			} catch (InterruptedException e) {
-				LOG.error("", e);
+				logger.log(Level.WARNING, "", e);
 			}
 		} catch (ForwarderConfigurationException e) {
 			fw.shutdown();

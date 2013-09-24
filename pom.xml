@@ -39,12 +39,12 @@
 			<version>0.2.0</version>
 			<scope>compile</scope>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>gov.nih.imagej</groupId>
 			<artifactId>imagej</artifactId>
 			<version>1.46</version>
 			<scope>compile</scope>
-		</dependency>
+		</dependency> -->
 
 		<!-- WEB Services -->
 		<dependency>
@@ -81,7 +81,7 @@
 		</dependency>
 		
 		<!-- Logging -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.0.13</version>
@@ -98,7 +98,7 @@
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.5</version>
 			<scope>compile</scope>
-		</dependency>
+		</dependency> -->
 		
 		<!-- Testing  -->
 		<dependency>

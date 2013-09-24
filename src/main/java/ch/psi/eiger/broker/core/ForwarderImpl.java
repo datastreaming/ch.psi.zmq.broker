@@ -25,11 +25,11 @@ import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jeromq.ZMQ;
 import org.jeromq.ZMQ.Context;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ch.psi.eiger.broker.exception.ForwarderConfigurationException;
 import ch.psi.eiger.broker.model.ForwarderConfig;
@@ -42,8 +42,8 @@ import ch.psi.zmq.ZMQUtil;
  * 
  */
 public class ForwarderImpl implements Forwarder {
-
-	private Logger LOG = LoggerFactory.getLogger(ForwarderImpl.class);
+	
+	private static final Logger logger = Logger.getLogger(ForwarderImpl.class.getName());
 
 	static final String ADDRESS_PATTERN = "(tcp://)[a-zA-Z0-9.*-]{1,200}(:)[0-9]{4,5}";
 
@@ -103,15 +103,15 @@ public class ForwarderImpl implements Forwarder {
 
 		if (this.config.getHwm() == null) {
 			this.config.setHwm(4);
-			LOG.debug(MessageFormat.format("Set default high water mark to {0}.", this.config.getHwm()));
+			logger.fine(MessageFormat.format("Set default high water mark to {0}.", this.config.getHwm()));
 		}
-		LOG.debug(MessageFormat.format("Configured forwarder with parameters: {0}.", this.config));
+		logger.fine(MessageFormat.format("Configured forwarder with parameters: {0}.", this.config));
 	}
 
 	@Override
 	public void start() {
 		outSocket = ZMQUtil.bind(context, ZMQ.PUSH, config.getAddress(), config.getHwm());
-		LOG.info("Initialized ZMQ socket connection.");
+		logger.info("Initialized ZMQ socket connection.");
 
 		if (config.getFwTimeInterval() != null) {
 			timer = new Timer();
@@ -119,7 +119,7 @@ public class ForwarderImpl implements Forwarder {
 			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
-					LOG.debug("Pass next frame through.");
+					logger.fine("Pass next frame through.");
 					mode = Mode.PassNextFrameThrough;
 				}
 			}, 0, config.getFwTimeInterval());
@@ -141,7 +141,7 @@ public class ForwarderImpl implements Forwarder {
 
 		isRunning = true;
 
-		LOG.info("Forwarder is now online.");
+		logger.info("Forwarder is now online.");
 	}
 
 	@Override
@@ -175,10 +175,10 @@ public class ForwarderImpl implements Forwarder {
 					mode = Mode.IgnoreFrame;
 				}
 			} else if (isRunning) {
-				LOG.debug(MessageFormat.format("Ignore frame {0}.", internalFrameNo));
+				logger.fine(MessageFormat.format("Ignore frame {0}.", internalFrameNo));
 			}
 		} catch (InterruptedException e) {
-			LOG.warn("", e);
+			logger.log(Level.WARNING, "", e);
 		}
 	}
 

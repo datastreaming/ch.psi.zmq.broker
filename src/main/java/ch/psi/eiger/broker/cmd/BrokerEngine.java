@@ -32,13 +32,10 @@ import java.text.MessageFormat;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import jline.console.ConsoleReader;
 import jline.console.completer.StringsCompleter;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ch.psi.eiger.broker.core.Broker;
 import ch.psi.eiger.broker.core.BrokerImpl;
 import ch.psi.eiger.broker.core.Forwarder;
@@ -59,7 +56,7 @@ import ch.psi.eiger.broker.webservice.RESTBroker;
  */
 public final class BrokerEngine {
 
-	private final static Logger LOG = LoggerFactory.getLogger(BrokerEngine.class);
+	private static final Logger logger = Logger.getLogger(BrokerEngine.class.getName());
 
 	private static BrokerEngine instance;
 
@@ -143,7 +140,7 @@ public final class BrokerEngine {
 				}
 			}
 		} catch (Exception e) {
-			LOG.error("", e);
+			logger.log(java.util.logging.Level.WARNING, "", e);
 		}
 
 		if (broker != null) {
@@ -168,13 +165,13 @@ public final class BrokerEngine {
 						consume(line);
 					}
 				} catch (IOException e) {
-					LOG.error("", e);
+					logger.log(java.util.logging.Level.WARNING, "", e);
 				}
 			} else {
-				LOG.warn(MessageFormat.format("Could not find specified config file {0}.", fileLocation));
+				logger.warning(MessageFormat.format("Could not find specified config file {0}.", fileLocation));
 			}
 		} else {
-			LOG.info("Configuration file not specified. Add -DconfigFile <path> to configure broker automatically.");
+			logger.info("Configuration file not specified. Add -DconfigFile <path> to configure broker automatically.");
 		}
 	}
 
@@ -185,7 +182,7 @@ public final class BrokerEngine {
 				System.out.println(line);
 			}
 		} catch (IOException e) {
-			LOG.error("", e);
+			logger.log(java.util.logging.Level.WARNING, "", e);
 		}
 	}
 
@@ -252,7 +249,7 @@ public final class BrokerEngine {
 					} catch (NumberFormatException e) {
 						throw new BrokerConfigurationException("Parameter port must be an integer.");
 					} catch (IOException e) {
-						LOG.error("", e);
+						logger.log(java.util.logging.Level.WARNING, "", e);
 						if (server != null) {
 							GrizzlyServer server = this.server;
 							this.server = null;
@@ -374,7 +371,7 @@ public final class BrokerEngine {
 			try {
 				Thread.sleep(1500);
 			} catch (InterruptedException e) {
-				LOG.error("", e);
+				logger.log(java.util.logging.Level.WARNING,"", e);
 			}
 		} catch (BrokerConfigurationException e) {
 			newBroker.shutdown();
