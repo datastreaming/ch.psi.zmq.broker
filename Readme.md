@@ -18,12 +18,12 @@ ZMQ broker for routing ZMQ messages. Currently only PUSH/PULL is supported.
 
 To start the broker use `java -Xmx1024m -jar ch.psi.zmq.broker.jar yourConfigFile.xml`
 
-To terminate the broker use `ctrl+c`. If it does not with the first `ctrl+c` (normal shutdown) issue a second one. This will force the termination of the virtual machine.
+To terminate the broker use `ctrl+c`. If it does not terminate with the first `ctrl+c` (normal shutdown) issue a second one. This will force the termination of the virtual machine.
 
 ## Configuration
 The broker is configured via a xml configuration file. The content of the configuration is as follows:
 
-<pre>
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<routing name="">
@@ -32,7 +32,7 @@ The broker is configured via a xml configuration file. The content of the config
 		<destination address="tcp://*:9091"/>
 	</routing>
 </configuration>
-</pre>
+```
 
 You can specify (zero,) one or more destinations.
 
