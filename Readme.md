@@ -2,7 +2,7 @@
 # Overview
 ZMQ broker for routing ZMQ messages. Currently only PUSH/PULL is supported.
 
-<pre>
+```
                                                                             +----------------+
                                                                             |                |
         +--------------+                    +---------------+    +----->PULL| destination 1  |
@@ -14,7 +14,7 @@ ZMQ broker for routing ZMQ messages. Currently only PUSH/PULL is supported.
                                                                  +----->PULL| destination 2  |
                                                                             |                |
                                                                             +----------------+
-<pre>
+```
 
 To start the broker use `java -Xmx1024m -jar ch.psi.zmq.broker.jar yourConfigFile.xml`
 
