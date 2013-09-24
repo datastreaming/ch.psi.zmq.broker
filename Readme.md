@@ -40,3 +40,9 @@ You can specify (zero,) one or more destinations.
 ZMQ Broker is based on https://github.com/zeromq/jeromq the Java implementation of ZMQ.
 
 To build the broker jar use `mvn clean compile assembly:single`
+
+
+#References
+Main Page: http://zeromq.org/
+Java Library: https://github.com/zeromq/jeromq
+Education: https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/patterns/pubsub.html
