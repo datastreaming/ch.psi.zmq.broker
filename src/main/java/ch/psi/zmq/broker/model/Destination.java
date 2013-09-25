@@ -21,20 +21,34 @@ package ch.psi.zmq.broker.model;
 
 import javax.xml.bind.annotation.XmlAttribute;
 
-public class Destination {
+import ch.psi.zmq.broker.model.Routing.Type;
 
+
+public class Destination {
+	
 	/**
 	 * Address of the source in following format
 	 * tcp://&gt;ip>:&gt;port>
 	 */
 	private String address;
 
+	/**
+	 * Type of connection. Default type is PUSH
+	 */
+	private Type type = Type.PUSH;
+	
 	@XmlAttribute
 	public String getAddress() {
 		return address;
 	}
-
 	public void setAddress(String address) {
 		this.address = address;
+	}
+	@XmlAttribute
+	public Type getType() {
+		return type;
+	}
+	public void setType(Type type) {
+		this.type = type;
 	}
 }

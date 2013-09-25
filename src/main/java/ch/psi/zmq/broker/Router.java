@@ -52,7 +52,17 @@ public class Router implements Runnable{
 		// Bind to destinations, i.e. create sockets.
 		final List<ZMQ.Socket> out = new ArrayList<>();
 		for(ch.psi.zmq.broker.model.Destination d: routing.getDestinations()){
-			ZMQ.Socket outSocket = context.socket(ZMQ.PUSH);
+			int type;
+			switch (d.getType()) {
+			case PUB:
+				type = ZMQ.PUB;
+				break;
+
+			default:
+				type = ZMQ.PUSH;
+				break;
+			}
+			ZMQ.Socket outSocket = context.socket(type);
 //			outSocket.setHWM(DESTINATION_HIGH_WATER_MARK);
 //			outSocket.setRate(100000);
 			outSocket.bind(d.getAddress());
@@ -61,9 +71,22 @@ public class Router implements Runnable{
 		
 		// Open connection to source
 		logger.info("Connect to source: "+routing.getSource().getAddress());
-		final ZMQ.Socket in = context.socket(ZMQ.PULL);
+		int type;
+		switch (routing.getSource().getType()) {
+		case SUB:
+			type = ZMQ.SUB;
+			break;
+
+		default:
+			type = ZMQ.PULL;
+			break;
+		}
+		final ZMQ.Socket in = context.socket(type);
 		in.setHWM(SOURCE_HIGH_WATER_MARK);
 		in.connect(routing.getSource().getAddress());
+		if(routing.getSource().getType().equals(Routing.Type.SUB)){
+			in.subscribe(""); // subscribe to all topics
+		}
 		
 		logger.info("Enter routing loop");
 		// Do Routing

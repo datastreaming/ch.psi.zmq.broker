@@ -31,6 +31,11 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement
 public class Routing {
+	
+	/**
+	 * Enum holding type of connections supported by routing
+	 */
+	public enum Type {PUSH, PULL, PUB, SUB};
 
 	private String name;
 	private Source source;

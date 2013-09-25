@@ -2,6 +2,6 @@
 <configuration>
 	<routing name="">
 		<source address="tcp://localhost:8080" />
-		<destination address="tcp://*:9090"/>
+		<destination address="tcp://*:9090" type="PUB"/>
 	</routing>
 </configuration>
