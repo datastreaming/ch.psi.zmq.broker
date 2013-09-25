@@ -119,5 +119,6 @@ public class Broker {
 	public void terminate(){
 		logger.info("Terminate broker");
 		eservice.shutdownNow();
+		logger.info("Broker terminated");
 	}
 }
