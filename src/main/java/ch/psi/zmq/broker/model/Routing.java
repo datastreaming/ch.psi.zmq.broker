@@ -37,7 +37,7 @@ public class Routing {
 	 */
 	public enum Type {PUSH, PULL, PUB, SUB};
 
-	private String name;
+	private String name = "";
 	private Source source;
 	private List<Destination> destinations;
 	

@@ -39,7 +39,12 @@ public class Router implements Runnable{
 	private final static int SOURCE_HIGH_WATER_MARK = 5; 
 	private final static int DESTINATION_HIGH_WATER_MARK = 5; 
 
+	private ZMQ.Context context;
+	private List<ZMQ.Socket> out = new ArrayList<>();
+	private ZMQ.Socket in;
+	
 	private Routing routing;
+	
 	public Router(Routing routing){
 		this.routing = routing;
 	}
@@ -47,10 +52,9 @@ public class Router implements Runnable{
 	@Override
 	public void run() {
 		logger.info("Start routing: "+routing.getName());
-		ZMQ.Context context = ZMQ.context();
+		context = ZMQ.context();
 		
 		// Bind to destinations, i.e. create sockets.
-		final List<ZMQ.Socket> out = new ArrayList<>();
 		for(ch.psi.zmq.broker.model.Destination d: routing.getDestinations()){
 			int type;
 			switch (d.getType()) {
@@ -81,7 +85,7 @@ public class Router implements Runnable{
 			type = ZMQ.PULL;
 			break;
 		}
-		final ZMQ.Socket in = context.socket(type);
+		in = context.socket(type);
 		in.setHWM(SOURCE_HIGH_WATER_MARK);
 		in.connect(routing.getSource().getAddress());
 		if(routing.getSource().getType().equals(Routing.Type.SUB)){
@@ -99,11 +103,22 @@ public class Router implements Runnable{
 		}
 			
 		// Close connections
-		logger.info("Terminate routing");
+		terminate();
+	}
+	
+	/**
+	 * Terminate router
+	 */
+	public void terminate(){
+		logger.info("Terminate routing: "+routing.getName());
 		in.close();
 		for(ZMQ.Socket o: out){
 			o.close();
 		}
+		context.term();
 	}
 
+	public Routing getRouting(){
+		return routing;
+	}
 }

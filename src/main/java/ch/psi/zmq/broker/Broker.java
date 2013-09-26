@@ -35,7 +35,7 @@ public class Broker {
 	
 	private static final Logger logger = Logger.getLogger(Broker.class.getName());
 
-	private final Map<Routing, Future<?>> routers = new HashMap<>();
+	private final Map<Router, Future<?>> routers = new HashMap<>();
 	
 	private ExecutorService eservice;
 	
@@ -51,7 +51,7 @@ public class Broker {
 		// Start new routing (thread)
 		Router r = new Router(routing);
 		Future<?> f = eservice.submit(r);
-		routers.put(routing, f);
+		routers.put(r, f);
 	}
 	
 	/**
@@ -62,9 +62,9 @@ public class Broker {
 		
 		List<Routing> rr = new ArrayList<>();
 		// Find all routings that matches pattern
-		for(Routing r: routers.keySet()){
-			if(r.getName().matches(pattern)){
-				rr.add(r);
+		for(Router r: routers.keySet()){
+			if(r.getRouting().getName().matches(pattern)){
+				rr.add(r.getRouting());
 			}
 		}
 		// Remove found routings
@@ -91,7 +91,9 @@ public class Broker {
 	 */
 	public Configuration getConfiguration(){
 		List<Routing> r = new ArrayList<>();
-		r.addAll(routers.keySet());
+		for(Router ro: routers.keySet()){
+			r.add(ro.getRouting());
+		}
 		Configuration c = new Configuration();
 		c.setRouting(r);
 		return c;
@@ -103,8 +105,8 @@ public class Broker {
 	 */
 	public void setConfiguration(Configuration configuration){
 		// Clean broker
-		for(Routing r: routers.keySet()){
-			removeRouting(r);
+		for(Router r: routers.keySet()){
+			removeRouting(r.getRouting());
 		}
 		
 		// Setup new configuration
@@ -118,6 +120,13 @@ public class Broker {
 	 */
 	public void terminate(){
 		logger.info("Terminate broker");
+		
+		// Terminate routers
+		for(Router r: routers.keySet()){
+			r.terminate();
+		}
+		
+		// Terminate threadpool
 		eservice.shutdownNow();
 		logger.info("Broker terminated");
 	}
