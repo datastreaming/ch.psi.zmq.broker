@@ -47,13 +47,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Console -->
-		<dependency>
-			<groupId>jline</groupId>
-			<artifactId>jline</artifactId>
-			<version>2.11</version>
-		</dependency>
-		
 	</dependencies>
 	
 	<organization>
