@@ -27,12 +27,14 @@ The broker is configured via a xml configuration file. The content of the config
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<routing name="">
-		<source address="tcp://localhost:8080" />
-		<destination address="tcp://*:9090"/>
-		<destination address="tcp://*:9091"/>
+		<source address="tcp://localhost:8080" type="PULL"/>
+		<destination address="tcp://*:9090" type="PUSH"/>
+		<destination address="tcp://*:9091" type="PUB"/>
 	</routing>
 </configuration>
 ```
+
+Curently following methods are supported for sources: PULL, SUB. PUSH and PUB are supported for destination.
 
 You can specify (zero,) one or more destinations.
 

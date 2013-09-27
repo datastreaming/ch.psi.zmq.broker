@@ -25,11 +25,13 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import ch.psi.zmq.broker.Broker;
 import ch.psi.zmq.broker.model.Configuration;
+import ch.psi.zmq.broker.model.Routing;
 
 @Path("broker")
 public class BrokerService {
@@ -52,5 +54,18 @@ public class BrokerService {
 	@DELETE
 	public void deleteConfiguration(){
 		broker.setConfiguration(new Configuration());
+	}
+	
+	@PUT
+	@Path("{routing-id}")
+	public void addRouting(@PathParam("routing-id") String name, Routing routing){
+		routing.setName(name); // Ensure that name is the same as the one specified on the URL
+		broker.addRouting(routing);
+	}
+	
+	@DELETE
+	@Path("{routing-id}")
+	public void addRouting(@PathParam("routing-id") String name){
+		broker.removeRouting("^"+name+"$");
 	}
 }
