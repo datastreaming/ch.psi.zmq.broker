@@ -21,6 +21,7 @@ package ch.psi.zmq.broker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jeromq.ZMQ;
@@ -44,6 +45,7 @@ public class Router implements Runnable{
 	private ZMQ.Socket in;
 	
 	private Routing routing;
+	private boolean terminate;
 	
 	public Router(Routing routing){
 		this.routing = routing;
@@ -51,8 +53,11 @@ public class Router implements Runnable{
 	
 	@Override
 	public void run() {
+		try{
 		logger.info("Start routing: "+routing.getName());
+		terminate = false;
 		context = ZMQ.context();
+		zmq.ZError.clear(); // Clear error code
 		
 		// Bind to destinations, i.e. create sockets.
 		for(ch.psi.zmq.broker.model.Destination d: routing.getDestinations()){
@@ -104,6 +109,13 @@ public class Router implements Runnable{
 			
 		// Close connections
 		terminate();
+		}
+		catch(Exception e){
+			if(!terminate){
+				logger.log(Level.SEVERE, "Routing failed", e);
+			}
+			// An exception occurs when terminating the router. Ignore this exception
+		}
 	}
 	
 	/**
@@ -111,11 +123,15 @@ public class Router implements Runnable{
 	 */
 	public void terminate(){
 		logger.info("Terminate routing: "+routing.getName());
-		in.close();
+		terminate = true;
+		if(in!=null){
+			in.close();
+		}
 		for(ZMQ.Socket o: out){
 			o.close();
 		}
 		context.term();
+		logger.info("Routing terminated");
 	}
 
 	public Routing getRouting(){

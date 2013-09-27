@@ -20,12 +20,9 @@
 package ch.psi.zmq.broker;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import ch.psi.zmq.broker.model.Configuration;
@@ -35,7 +32,7 @@ public class Broker {
 	
 	private static final Logger logger = Logger.getLogger(Broker.class.getName());
 
-	private final Map<Router, Future<?>> routers = new HashMap<>();
+	private final List<Router> routers = new ArrayList<>();
 	
 	private ExecutorService eservice;
 	
@@ -50,8 +47,8 @@ public class Broker {
 	public void addRouting(Routing routing){
 		// Start new routing (thread)
 		Router r = new Router(routing);
-		Future<?> f = eservice.submit(r);
-		routers.put(r, f);
+		eservice.submit(r);
+		routers.add(r);
 	}
 	
 	/**
@@ -60,30 +57,19 @@ public class Broker {
 	 */
 	public void removeRouting(String pattern){
 		
-		List<Routing> rr = new ArrayList<>();
+		List<Router> rr = new ArrayList<>();
 		// Find all routings that matches pattern
-		for(Router r: routers.keySet()){
+		for(Router r: routers){
 			if(r.getRouting().getName().matches(pattern)){
-				rr.add(r.getRouting());
+				rr.add(r);
 			}
 		}
 		// Remove found routings
-		for(Routing r: rr){
-			removeRouting(r);
+		for(Router r: rr){
+			r.terminate();
+			routers.remove(r);
 		}
 	}
-	
-	/**
-	 * Remove given routing from broker.
-	 * @param routing
-	 */
-	private void removeRouting(Routing routing){
-		// Remove routing from broker
-		routers.get(routing).cancel(true); // Stop router
-		
-		routers.remove(routing);
-	}
-	
 	
 	/**
 	 * Get current configuration of the broker.
@@ -91,7 +77,7 @@ public class Broker {
 	 */
 	public Configuration getConfiguration(){
 		List<Routing> r = new ArrayList<>();
-		for(Router ro: routers.keySet()){
+		for(Router ro: routers){
 			r.add(ro.getRouting());
 		}
 		Configuration c = new Configuration();
@@ -105,9 +91,10 @@ public class Broker {
 	 */
 	public void setConfiguration(Configuration configuration){
 		// Clean broker
-		for(Router r: routers.keySet()){
-			removeRouting(r.getRouting());
+		for(Router r: routers){
+			r.terminate();
 		}
+		routers.clear();
 		
 		// Setup new configuration
 		for(Routing r: configuration.getRouting()){
@@ -122,7 +109,7 @@ public class Broker {
 		logger.info("Terminate broker");
 		
 		// Terminate routers
-		for(Router r: routers.keySet()){
+		for(Router r: routers){
 			r.terminate();
 		}
 		
