@@ -98,12 +98,14 @@ public class Router implements Runnable{
 		}
 			
 		logger.info("Enter routing loop");
+		boolean receiveMore;
 		// Do Routing
 		while(!Thread.currentThread().isInterrupted()){
 			byte[] message = in.recv();
+			receiveMore = in.hasReceiveMore();
 			for(ZMQ.Socket o: out){
 				logger.fine("Message: "+message);
-				o.send(message);
+				o.send(message, receiveMore ? ZMQ.SNDMORE : 0);
 			}
 		}
 			
