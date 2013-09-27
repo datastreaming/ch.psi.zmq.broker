@@ -21,6 +21,7 @@ package ch.psi.zmq.broker.services;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -46,5 +47,10 @@ public class BrokerService {
 	@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public void setConfiguration(Configuration configuration){
 		broker.setConfiguration(configuration);
+	}
+	
+	@DELETE
+	public void deleteConfiguration(){
+		broker.setConfiguration(new Configuration());
 	}
 }

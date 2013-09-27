@@ -97,8 +97,10 @@ public class Broker {
 		routers.clear();
 		
 		// Setup new configuration
-		for(Routing r: configuration.getRouting()){
-			addRouting(r);
+		if(configuration.getRouting()!=null){
+			for(Routing r: configuration.getRouting()){
+				addRouting(r);
+			}
 		}
 	}
 	
