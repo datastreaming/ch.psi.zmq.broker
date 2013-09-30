@@ -37,6 +37,11 @@ public class Destination {
 	 */
 	private Type type = Type.PUSH;
 	
+	/**
+	 * Number of messages that can be buffered on the sending side
+	 */
+	private int buffer = 5;
+	
 	@XmlAttribute
 	public String getAddress() {
 		return address;
@@ -50,5 +55,12 @@ public class Destination {
 	}
 	public void setType(Type type) {
 		this.type = type;
+	}
+	@XmlAttribute
+	public int getBuffer() {
+		return buffer;
+	}
+	public void setBuffer(int buffer) {
+		this.buffer = buffer;
 	}
 }

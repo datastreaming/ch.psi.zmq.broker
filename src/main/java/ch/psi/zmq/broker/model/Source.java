@@ -35,6 +35,11 @@ public class Source {
 	 * Type of connection. Default type is PULL
 	 */
 	private Type type = Type.PULL;
+	
+	/**
+	 * Number of messages that can be buffered on the receiving side
+	 */
+	private int buffer = 5;
 
 
 	@XmlAttribute
@@ -51,5 +56,11 @@ public class Source {
 	public void setType(Type type) {
 		this.type = type;
 	}
-	
+	@XmlAttribute
+	public int getBuffer() {
+		return buffer;
+	}
+	public void setBuffer(int buffer) {
+		this.buffer = buffer;
+	}
 }

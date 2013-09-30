@@ -37,8 +37,6 @@ import ch.psi.zmq.broker.model.Routing;
 public class Router implements Runnable{
 	
 	private static final Logger logger = Logger.getLogger(Router.class.getName());
-	private final static int SOURCE_HIGH_WATER_MARK = 5; 
-	private final static int DESTINATION_HIGH_WATER_MARK = 5; 
 
 	private ZMQ.Context context;
 	private List<ZMQ.Socket> out = new ArrayList<>();
@@ -72,7 +70,7 @@ public class Router implements Runnable{
 				break;
 			}
 			ZMQ.Socket outSocket = context.socket(type);
-			outSocket.setHWM(DESTINATION_HIGH_WATER_MARK);
+			outSocket.setHWM(d.getBuffer());
 //			outSocket.setRate(100000);
 			outSocket.bind(d.getAddress());
 			out.add(outSocket);
@@ -91,7 +89,7 @@ public class Router implements Runnable{
 			break;
 		}
 		in = context.socket(type);
-		in.setHWM(SOURCE_HIGH_WATER_MARK);
+		in.setHWM(routing.getSource().getBuffer());
 		in.connect(routing.getSource().getAddress());
 		if(routing.getSource().getType().equals(Routing.Type.SUB)){
 			in.subscribe(""); // subscribe to all topics
