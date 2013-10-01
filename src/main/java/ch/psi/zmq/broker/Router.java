@@ -102,7 +102,7 @@ public class Router implements Runnable{
 			byte[] message = in.recv();
 			receiveMore = in.hasReceiveMore();
 			for(ZMQ.Socket o: out){
-				logger.fine("Message: "+message);
+				logger.finest("Message: "+message);
 				o.send(message, receiveMore ? ZMQ.SNDMORE : 0);
 			}
 		}
