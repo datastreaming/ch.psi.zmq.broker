@@ -2,6 +2,6 @@
 <configuration>
 	<routing name="">
 		<source address="tcp://localhost:8888" type="PULL"/>
-		<destination address="tcp://*:9090" type="PUB"/>
+		<destination address="tcp://*:9090" frequency="500" type="PUB"/>
 	</routing>
 </configuration>

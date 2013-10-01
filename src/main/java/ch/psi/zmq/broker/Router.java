@@ -20,6 +20,7 @@
 package ch.psi.zmq.broker;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -46,7 +47,7 @@ public class Router implements Runnable{
 	private List<ZMQ.Socket> out = new ArrayList<>();
 	private ZMQ.Socket in;
 	
-	private Map<ZMQ.Socket, AtomicBoolean> flag;
+	private Map<ZMQ.Socket, AtomicBoolean> flag = new HashMap<>();
 	private Timer timer = null;
 	
 	private Routing routing;
@@ -90,12 +91,12 @@ public class Router implements Runnable{
 				
 				final AtomicBoolean b = new AtomicBoolean();
 				flag.put(outSocket, b);
-				timer.schedule(new TimerTask() {
+				timer.scheduleAtFixedRate(new TimerTask() {
 					@Override
 					public void run() {
 						b.set(true); // clear flag
 					}
-				}, d.getFrequency());
+				}, 0, d.getFrequency());
 			}
 		}
 		
@@ -118,15 +119,45 @@ public class Router implements Runnable{
 			in.subscribe(""); // subscribe to all topics
 		}
 			
-		logger.info("Enter routing loop");
+		
 		boolean receiveMore;
 		// Do Routing
-		while(!Thread.currentThread().isInterrupted()){
-			byte[] message = in.recv();
-			receiveMore = in.hasReceiveMore();
-			for(ZMQ.Socket o: out){
-				logger.finest("Message: "+message);
-				o.send(message, receiveMore ? ZMQ.SNDMORE : 0);
+		if(timer==null){
+			logger.info("Enter routing loop without message reduction");
+			while(!Thread.currentThread().isInterrupted()){
+				byte[] message = in.recv();
+				receiveMore = in.hasReceiveMore();
+				for(ZMQ.Socket o: out){
+					logger.finest("Message: "+message);
+					o.send(message, receiveMore ? ZMQ.SNDMORE : 0);
+				}
+			}
+		}
+		else{
+			logger.info("Enter routing loop with message reduction");
+			List<byte[]> buffer = new ArrayList<>();
+			while(!Thread.currentThread().isInterrupted()){
+				// We need to take care that all related messages (multipart) are send out
+				buffer.add(in.recv()); // buffer all related messages
+				while(in.hasReceiveMore()){
+					buffer.add(in.recv());
+				}
+				
+				for(ZMQ.Socket o: out){
+					
+					int c = 1;
+					int len = buffer.size();
+					
+					if((!flag.containsKey(o)) || flag.get(o).getAndSet(false)){
+						for(byte[] message: buffer){
+							logger.finest("Message: "+message);
+							o.send(message, c<len ? ZMQ.SNDMORE : 0);
+							c++;
+						}
+					}
+				}
+				
+				buffer.clear();
 			}
 		}
 			
