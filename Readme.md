@@ -49,6 +49,12 @@ For destinations you can also configure a (max) frequency the messages are deliv
 
 You can specify (zero,) one or more destinations.
 
+A buffer size can be configured for both incomming (source) and outgoing (destination) side (queue/topic). This can be done by specifying the attribute `buffer="<size>"` on the `source` and `destination` tag.
+The default buffer size (if attribute is omitted) is on both side 5. This means that the broker is keeping maximum 10 messages inside its buffer (max memory consumed ~ 10 times message size).
+
+This feature can be used to use the broker as kind of online buffer when receiving parties are not able to keep up the speed the source delivers data but still need to get all messages. If using the broker in this kind of mode tuning to the explicit setup is necessary.
+   
+
 ## REST
 
 Get current configuration:
