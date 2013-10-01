@@ -21,6 +21,10 @@ package ch.psi.zmq.broker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +46,9 @@ public class Router implements Runnable{
 	private List<ZMQ.Socket> out = new ArrayList<>();
 	private ZMQ.Socket in;
 	
+	private Map<ZMQ.Socket, AtomicBoolean> flag;
+	private Timer timer = null;
+	
 	private Routing routing;
 	private boolean terminate;
 	
@@ -58,7 +65,7 @@ public class Router implements Runnable{
 		zmq.ZError.clear(); // Clear error code
 		
 		// Bind to destinations, i.e. create sockets.
-		for(ch.psi.zmq.broker.model.Destination d: routing.getDestinations()){
+		for(final ch.psi.zmq.broker.model.Destination d: routing.getDestinations()){
 			int type;
 			switch (d.getType()) {
 			case PUB:
@@ -74,6 +81,22 @@ public class Router implements Runnable{
 //			outSocket.setRate(100000);
 			outSocket.bind(d.getAddress());
 			out.add(outSocket);
+			
+			// Support reduced frequency for sending messages out
+			if(d.getFrequency()>0){
+				if(timer==null){
+					timer = new Timer(); // lazy creation timer
+				}
+				
+				final AtomicBoolean b = new AtomicBoolean();
+				flag.put(outSocket, b);
+				timer.schedule(new TimerTask() {
+					@Override
+					public void run() {
+						b.set(true); // clear flag
+					}
+				}, d.getFrequency());
+			}
 		}
 		
 		// Open connection to source
@@ -131,6 +154,11 @@ public class Router implements Runnable{
 			o.close();
 		}
 		context.term();
+		
+		if(timer!=null){
+			timer.cancel();
+		}
+		
 		logger.info("Routing terminated");
 	}
 

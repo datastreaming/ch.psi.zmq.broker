@@ -42,6 +42,11 @@ public class Destination {
 	 */
 	private int buffer = 5;
 	
+	/**
+	 * Update frequency in milliseconds
+	 */
+	private long frequency = 0;
+	
 	@XmlAttribute
 	public String getAddress() {
 		return address;
@@ -63,4 +68,12 @@ public class Destination {
 	public void setBuffer(int buffer) {
 		this.buffer = buffer;
 	}
+	@XmlAttribute
+	public long getFrequency() {
+		return frequency;
+	}
+	public void setFrequency(long frequency) {
+		this.frequency = frequency;
+	}
+	
 }
