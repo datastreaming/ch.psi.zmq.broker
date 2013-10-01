@@ -16,7 +16,11 @@ The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ dat
                                                                             +----------------+
 ```
 
-To start the broker use `java -Xmx1024m -jar ch.psi.zmq.broker.jar -c yourConfigFile.xml`
+The broker comes with a REST API to be able to dynamically (re)configure the brokers routing and settings.
+To start the broker use `java -Xmx1024m -jar ch.psi.zmq.broker.jar`
+
+Optionally you can already specify a configuration file at startup via the `-c <yourConfigFile.xml>` option.
+The default port of the web server serving the REST api is 8080. If you need/want to specify a different port than this use the `-p <port>` option. 
 
 To terminate the broker use `ctrl+c`. If it does not terminate with the first `ctrl+c` (normal shutdown) issue a second one. This will force the termination of the virtual machine.
 
@@ -26,6 +30,7 @@ To terminate the broker use `ctrl+c`. If it does not terminate with the first `c
 The broker can be configured via config file and/or via REST API. 
 
 ## File
+The configuration file of the broker can be specified via the `-c` option at the startup of the broker.
 The basic structure of the configuration is as follows:
 
 ```xml
