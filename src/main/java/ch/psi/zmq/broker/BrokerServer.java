@@ -88,6 +88,10 @@ public class BrokerServer {
 		final CountDownLatch latch = new CountDownLatch(1);
 		Signal.handle(new Signal("INT"), new SignalHandler() {
 			public void handle(Signal sig) {
+				if(latch.getCount()==0){
+					logger.info("Terminate broker by System.exit()");
+					System.exit(1); // Terminate program after 2 ctrl+c 
+				}
 				latch.countDown();
 			}
 		});
