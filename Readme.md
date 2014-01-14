@@ -1,6 +1,7 @@
 
 # Overview
-The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ data streams. It can be used with any message format.
+The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ data streams. It can be used with any 
+message format.
 
 ```
                                                                             +----------------+
@@ -132,12 +133,19 @@ DELETE http://<broker>:<port>/broker/<id>
 
 
 # Development
-ZMQ Broker is based on https://github.com/zeromq/jeromq the Java implementation of ZMQ.
-
-To build the broker jar use `mvn clean compile assembly:single`
+ZMQ Broker is based on https://github.com/zeromq/jeromq the Java implementation of ZMQ. It is a maven project and can be 
+build via `mvn clean compile assembly:single`
 
 
 #References
-- Main Page: http://zeromq.org/
-- Java Library: https://github.com/zeromq/jeromq
-- Education: https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/patterns/pubsub.html
+
+  * http://www.zeromq.org/ 
+  * https://github.com/zeromq/jeromq 
+
+  * https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/patterns/pubsub.html
+  * http://zeromq.org/whitepapers:brokerless 
+  * http://java.dzone.com/category/tags/zeromq
+  * http://nichol.as/zeromq-an-introduction 
+  * http://ruudud.github.io/presentations/zeromq/#/ 
+  * http://java.dzone.com/articles/distributed-systems-zeromq
+
