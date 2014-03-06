@@ -1,3 +1,7 @@
+# Download
+
+The latest released version of the broker can be downloaded [here](http://slsyoke4.psi.ch:8081/artifactory/releases/ch.psi.zmq.broker-2.1.0.jar).
+
 
 # Overview
 The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ data streams. It can be used with any 
