@@ -1,7 +1,9 @@
 # Download / Installation
 
-The latest released version of the broker can be downloaded [here](http://slsyoke4.psi.ch:8081/artifactory/releases/ch.psi.zmq.broker-2.1.0.jar).
+The latest released version of the broker can be downloaded [here](http://slsyoke4.psi.ch:8081/artifactory/releases/ch.psi.zmq.broker-2.2.0.jar).
 To "install" the broker just extract the zip file.
+
+The only dependency you have is on a Java Virtual Machine 7 or greater.
 
 # Overview
 The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ data streams. It can be used with any 
@@ -34,7 +36,11 @@ The default port of the web server serving the REST API is 8080. If you need/wan
 To terminate the broker use `ctrl+c`. If it does not terminate with the first `ctrl+c` (normal shutdown) issue a second one. This will force the 
 termination of the virtual machine.
 
-The only dependency you have is on a Java Virtual Machine 7 or greater.
+After the startup there the web ui can be accessed via (note that the trailing / is important!)
+
+```
+http://<host>:<port>/static/
+```
 
 
 # Configuration
