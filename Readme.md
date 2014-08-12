@@ -1,6 +1,6 @@
 # Download / Installation
 
-The latest released version of the broker can be downloaded [here](http://slsyoke4.psi.ch:8081/artifactory/releases/ch.psi.zmq.broker-2.2.0.jar).
+The latest released version of the broker can be downloaded [here](http://slsyoke4.psi.ch:8081/artifactory/releases/ch.psi.zmq.broker-2.2.0.zip).
 To "install" the broker just extract the zip file.
 
 The only dependency you have is on a Java Virtual Machine 7 or greater.
