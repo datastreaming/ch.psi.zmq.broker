@@ -39,4 +39,4 @@ done
 
 BROKER_BASE=$BASEDIR/../
 export BROKER_BASE
-java $VM_ARGUMENTS -cp $CLASSPATH ch.psi.zmq.broker.BrokerServer $ARGUMENTS
+java -Xmx1024m $VM_ARGUMENTS -cp $CLASSPATH ch.psi.zmq.broker.BrokerServer $ARGUMENTS

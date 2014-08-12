@@ -1,7 +1,7 @@
-# Download
+# Download / Installation
 
 The latest released version of the broker can be downloaded [here](http://slsyoke4.psi.ch:8081/artifactory/releases/ch.psi.zmq.broker-2.1.0.jar).
-
+To "install" the broker just extract the zip file.
 
 # Overview
 The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ data streams. It can be used with any 
@@ -25,7 +25,7 @@ The broker comes with a REST API to be able to dynamically (re)configure the bro
 To start the broker use 
 
 ```
-java -Xmx1024m -jar ch.psi.zmq.broker.jar
+bin/broker
 ```
 
 Optionally you can already specify a configuration file at startup via the `-c <yourConfigFile.xml>` option.
@@ -165,7 +165,11 @@ curl -X PUT -H "Content-Type: application/json" --data '{ "name": "BB", "source"
 
 # Development
 ZMQ Broker is based on https://github.com/zeromq/jeromq the Java implementation of ZMQ. It is a maven project and can be 
-build via `mvn clean compile assembly:single`
+build via 
+
+```
+mvn clean compile assembly:assembly
+```
 
 
 #References
