@@ -29,43 +29,117 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseBroadcaster;
+import org.glassfish.jersey.media.sse.SseFeature;
+
 import ch.psi.zmq.broker.Broker;
 import ch.psi.zmq.broker.model.Configuration;
 import ch.psi.zmq.broker.model.Routing;
 
-@Path("broker")
+@Path("")
 public class BrokerService {
 	
 	@Inject
 	private Broker broker;
 	
+	@Inject
+	private SseBroadcaster broadcaster;
+	
 	@GET
+	@Path("broker")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Configuration getConfiguration(){
 		return broker.getConfiguration();
 	}
 	
 	@PUT
+	@Path("broker")
 	@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 	public void setConfiguration(Configuration configuration){
 		broker.setConfiguration(configuration);
+		
+		// Broadcast new stream list
+		OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		OutboundEvent event = eventBuilder.name("broker")
+				            .mediaType(MediaType.APPLICATION_JSON_TYPE)
+				            .data(Configuration.class, broker.getConfiguration())
+				            .build();
+		broadcaster.broadcast(event);			
 	}
 	
 	@DELETE
+	@Path("broker")
 	public void deleteConfiguration(){
 		broker.setConfiguration(new Configuration());
+		
+		// Broadcast new stream list
+		OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		OutboundEvent event = eventBuilder.name("broker")
+				            .mediaType(MediaType.APPLICATION_JSON_TYPE)
+				            .data(Configuration.class, broker.getConfiguration())
+				            .build();
+		broadcaster.broadcast(event);
 	}
 	
 	@PUT
-	@Path("{routing-id}")
+	@Path("broker/{routing-id}")
 	public void addRouting(@PathParam("routing-id") String name, Routing routing){
 		routing.setName(name); // Ensure that name is the same as the one specified on the URL
 		broker.addRouting(routing);
+		
+		// Broadcast new stream list
+		OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		OutboundEvent event = eventBuilder.name("broker")
+		            .mediaType(MediaType.APPLICATION_JSON_TYPE)
+		            .data(Configuration.class, broker.getConfiguration())
+		            .build();
+		broadcaster.broadcast(event);
+	}
+	
+	@GET
+	@Path("broker/{routing-id}")
+	public Routing getRouting(@PathParam("routing-id") String name){
+		for(Routing r: broker.getConfiguration().getRouting()){
+			if(r.getName().equals(name)){
+				return r;
+			}
+		}
+		return null;
 	}
 	
 	@DELETE
-	@Path("{routing-id}")
-	public void addRouting(@PathParam("routing-id") String name){
+	@Path("broker/{routing-id}")
+	public void deleteRouting(@PathParam("routing-id") String name){
 		broker.removeRouting("^"+name+"$");
+		
+		// Broadcast new stream list
+		OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		OutboundEvent event = eventBuilder.name("broker")
+				            .mediaType(MediaType.APPLICATION_JSON_TYPE)
+				            .data(Configuration.class, broker.getConfiguration())
+				            .build();
+		broadcaster.broadcast(event);
 	}
+	
+	@GET
+    @Path("events")
+    @Produces(SseFeature.SERVER_SENT_EVENTS)
+    public EventOutput subscribe() {
+        EventOutput eventOutput = new EventOutput();
+        broadcaster.add(eventOutput);
+        return eventOutput;
+    }
+	
+	@GET
+    @Path("version")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getVersion(){
+    	String version = getClass().getPackage().getImplementationVersion();
+    	if(version==null){
+    		version="0.0.0";
+    	}
+    	return version;
+    }
 }

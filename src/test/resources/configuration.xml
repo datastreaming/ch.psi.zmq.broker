@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-	<routing name="">
+	<routing name="b">
 		<source address="tcp://localhost:8888" type="PULL"/>
 		<destination address="tcp://*:9090" frequency="500" type="PUB"/>
 	</routing>

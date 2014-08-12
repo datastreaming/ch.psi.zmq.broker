@@ -35,39 +35,60 @@ body {
 		});
 	}
 	
-	function getReceivers() {
-		$.get(base+'/receiver', function(data) {
-			updateReceivers(data);
+	function getConfiguration() {
+		$.get(base+'/broker', function(data) {
+			updateRoutings(data.routing);
 		}, 'json');
 	}
 	
-	function deleteReceiver(id){
+	function deleteRouting(routing){
 		$.ajax({
-		    url: base+'/receiver/'+id,
+		    url: base+'/broker/'+routing,
 		    type: 'DELETE',
 		    success: function(result) {
 		    }
 		});
 	}
 	
-	function newReceiver(){
+	function newRouting(){
 		config = new Object();
+		source = new Object();
+		config.source = source;
 		
-		value=$('#s_hostname').val();
+		value=$('#s_s_address').val();
 		if(value!=null && value!=''){
-			config.hostname=value
+			source.address=value;
 		}
-		value=$('#s_numberOfImages').val();
+		value=$('#s_s_type').val();
 		if(value!=null && value!=''){
-			config.numberOfImages=parseInt(value)
+			source.type=value;
+		}
+		value=$('#s_s_buffer').val();
+		if(value!=null && value!=''){
+			source.buffer=parseInt(value);
 		}
 		
-		value=$('#s_port').val();
+		dest = new Object();
+		value=$('#s_d_address').val();
 		if(value!=null && value!=''){
-			config.port=value;
+			dest.address=value;
 		}
+		value=$('#s_d_type').val();
+		if(value!=null && value!=''){
+			dest.type=value;
+		}
+		value=$('#s_d_frequency').val();
+		if(value!=null && value!=''){
+			dest.frequency=parseInt(value);
+		}
+		value=$('#s_d_buffer').val();
+		if(value!=null && value!=''){
+			dest.buffer=parseInt(value);
+		}
+		config.destination = [dest];
 		
-		addReceiver($('#s_id').val(), config);
+		config.name = $('#s_id').val()
+		addRouting($('#s_id').val(), config);
 	}
 	
 	function setAttribute(field, value){
@@ -76,9 +97,9 @@ body {
 		}
 	}
 	
-	function addReceiver(id, config){
+	function addRouting(id, config){
 		$.ajax({
-		    url: base+'/receiver/'+id,
+		    url: base+'/broker/'+id,
 		    contentType: "application/json",
 		    type: 'PUT',
 		    data: JSON.stringify(config),
@@ -87,28 +108,26 @@ body {
 		});
 	}
 	
-	function showInfo(tag, receiver){
+	function showInfo(tag, routing){
 		// add information for
-		$.get(base+'/receiver/'+receiver, function(data) {
+		$.get(base+'/broker/'+routing, function(data) {
 			
-			$("#receiverinfo").append("<h2>Details: "+receiver+"</h2><pre>"+JSON.stringify(data, null, 4)+"</pre>");
+			$("#routinginfo").append("<h2>Details: "+routing+"</h2><pre>"+JSON.stringify(data, null, 4)+"</pre>");
 		}, 'json');
 	}
 	
 	function hideInfo(tag){
-		$("#receiverinfo").empty();
+		$("#routinginfo").empty();
 	}
 	
-	function updateReceivers(receivers){
-		keytag = $('#receivers');
+	function updateRoutings(routings){
+		keytag = $('#routings');
 		keytag.empty();
 		table='<table class="table table-hover"><tbody>';
 		
-		for(k in receivers){
-			table=table+'<tr onmouseenter="showInfo($(\'td:last\'), \''+receivers[k]+'\')" onmouseout="hideInfo($(\'td:last\'))"><td>'+receivers[k]+'</td><td>'+
-			/* '<div class="input-append">'+ */
-			'<button class="btn pull-right" type="button" onclick="deleteReceiver(\''+receivers[k]+'\')">Delete</button>'+
-			/* '</div>'+ */
+		for(k in routings){
+			table=table+'<tr onmouseenter="showInfo($(\'td:last\'), \''+routings[k].name+'\')" onmouseout="hideInfo($(\'td:last\'))"><td>'+routings[k].name+'</td><td>'+
+			'<button class="btn pull-right" type="button" onclick="deleteRouting(\''+routings[k].name+'\')">Delete</button>'+
 			'</td><td></td></tr>';
 		}
 		
@@ -120,9 +139,9 @@ body {
 	function connectStream() {
 		closeStream();
 		stream = new EventSource(base + '/events');
-		stream.addEventListener('receiver', function(event) {
+		stream.addEventListener('broker', function(event) {
 			jdata = JSON.parse(event.data)
-			updateReceivers(jdata);
+			updateRoutings(jdata.routing);
 			
 		}, false);
 	}
@@ -143,7 +162,7 @@ body {
 				<a class="btn btn-navbar" data-toggle="collapse"
 					data-target=".nav-collapse"> <span class="icon-bar"></span> <span
 					class="icon-bar"></span> <span class="icon-bar"></span>
-				</a> <a class="brand" href="#">Receiver</a>
+				</a> <a class="brand" href="#">Broker</a>
 			</div>
 		</div>
 	</div>
@@ -160,35 +179,41 @@ body {
 		<div class="row">
 			<div class="span6">
 			<div class="span6">
-				<h2>Add Receiver</h2>
+				<h2>Add Routing</h2>
 				<div class="span3">
 					
-				      <input class="span3" id="s_id" placeholder="TrackingId" type="text">
-					  <input class="span3" id="s_hostname" placeholder="Hostname" type="text">
-					  <input class="span3" id="s_port" placeholder="Port" type="text">
-					  <input class="span3" id="s_numberOfImages" placeholder="Number of Images" type="text">
+				      <input class="span3" id="s_id" placeholder="Name" type="text">
+				      <b>Source</b>
+					  <input class="span3" id="s_s_address" placeholder="Address" type="text">
+					  <input class="span3" id="s_s_type" placeholder="Type" type="text">
+					  <input class="span3" id="s_s_buffer" placeholder="Buffer" type="text">
+					  <b>Destination</b>
+					  <input class="span3" id="s_d_address" placeholder="Address" type="text">
+					  <input class="span3" id="s_d_type" placeholder="Type" type="text">
+					  <input class="span3" id="s_d_frequency" placeholder="Frequency" type="text">
+					  <input class="span3" id="s_d_buffer" placeholder="Buffer" type="text">
 					  
 				</div>
 				
 				<div class="span2">
-				<button id="addReceiverBtn" class="btn" type="button" onclick="newReceiver()">Add</button>
+				<button id="addReceiverBtn" class="btn" type="button" onclick="newRouting()">Add</button>
 				</div>
 				</div>
 				
 				<div class="span6">
-				<h2>Receivers</h2>
-				<div class="span4" id="receivers"></div>
+				<h2>Actual Routing</h2>
+				<div class="span4" id="routings"></div>
 				</div>
 			</div>
 			
-			<div class="span6" id="receiverinfo"></div>
+			<div class="span6" id="routinginfo"></div>
 			
 		</div>
 		
 		<hr>
 
 		<footer>
-			<p>Receiver - Version <span id='version'></span> - &copy; Paul Scherrer Institute 2013</p>
+			<p>Broker - Version <span id='version'></span> - &copy; Paul Scherrer Institute 2014</p>
 		</footer>
 
 	</div>
@@ -197,7 +222,7 @@ body {
 	<script>
 		/* update beamlines */
 		getVersion();
-		getReceivers();
+		getConfiguration();
 		connectStream();
 	</script>
 

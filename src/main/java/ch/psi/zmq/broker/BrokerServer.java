@@ -20,6 +20,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.media.sse.SseBroadcaster;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
@@ -65,10 +67,9 @@ public class BrokerServer {
 		Broker broker = createBroker(config);
 		
 		
-		ResourceBinder binder = new ResourceBinder();
-		binder.bind(broker).to(Broker.class); // Always inject broker instance wherever an Broker is required
+		ResourceBinder binder = new ResourceBinder(broker);
 		
-		ResourceConfig resourceConfig = new ResourceConfig(JacksonFeature.class);
+		ResourceConfig resourceConfig = new ResourceConfig(SseFeature.class, JacksonFeature.class);
 		resourceConfig.packages(BrokerServer.class.getPackage().getName()+".services"); // Services are located in services package
 		resourceConfig.register(binder);
 		HttpServer server = GrizzlyHttpServerFactory.createHttpServer(baseUri, resourceConfig);
