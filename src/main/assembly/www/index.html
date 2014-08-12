@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title></title>
+<meta name="description" content="">
+<meta name="viewport" content="width=device-width">
+
+<link rel="stylesheet" href="css/bootstrap.min.css">
+<style>
+body {
+	padding-top: 60px;
+	padding-bottom: 40px;
+}
+</style>
+<link rel="stylesheet" href="css/bootstrap-responsive.min.css">
+<link rel="stylesheet" href="css/main.css">
+
+<script src="js/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+<script src="js/jquery-2.0.0.min.js"></script>
+
+<script type='text/javascript'>
+	var base = '..';
+
+	function getVersion() {
+		$.get(base+'/version', function(data) {
+			$('#version').empty();
+			$('#version').append(data)
+		});
+	}
+	
+	function getReceivers() {
+		$.get(base+'/receiver', function(data) {
+			updateReceivers(data);
+		}, 'json');
+	}
+	
+	function deleteReceiver(id){
+		$.ajax({
+		    url: base+'/receiver/'+id,
+		    type: 'DELETE',
+		    success: function(result) {
+		    }
+		});
+	}
+	
+	function newReceiver(){
+		config = new Object();
+		
+		value=$('#s_hostname').val();
+		if(value!=null && value!=''){
+			config.hostname=value
+		}
+		value=$('#s_numberOfImages').val();
+		if(value!=null && value!=''){
+			config.numberOfImages=parseInt(value)
+		}
+		
+		value=$('#s_port').val();
+		if(value!=null && value!=''){
+			config.port=value;
+		}
+		
+		addReceiver($('#s_id').val(), config);
+	}
+	
+	function setAttribute(field, value){
+		if(value!=null && value!=''){
+			field = value;
+		}
+	}
+	
+	function addReceiver(id, config){
+		$.ajax({
+		    url: base+'/receiver/'+id,
+		    contentType: "application/json",
+		    type: 'PUT',
+		    data: JSON.stringify(config),
+		    success: function(result) {
+		    }
+		});
+	}
+	
+	function showInfo(tag, receiver){
+		// add information for
+		$.get(base+'/receiver/'+receiver, function(data) {
+			
+			$("#receiverinfo").append("<h2>Details: "+receiver+"</h2><pre>"+JSON.stringify(data, null, 4)+"</pre>");
+		}, 'json');
+	}
+	
+	function hideInfo(tag){
+		$("#receiverinfo").empty();
+	}
+	
+	function updateReceivers(receivers){
+		keytag = $('#receivers');
+		keytag.empty();
+		table='<table class="table table-hover"><tbody>';
+		
+		for(k in receivers){
+			table=table+'<tr onmouseenter="showInfo($(\'td:last\'), \''+receivers[k]+'\')" onmouseout="hideInfo($(\'td:last\'))"><td>'+receivers[k]+'</td><td>'+
+			/* '<div class="input-append">'+ */
+			'<button class="btn pull-right" type="button" onclick="deleteReceiver(\''+receivers[k]+'\')">Delete</button>'+
+			/* '</div>'+ */
+			'</td><td></td></tr>';
+		}
+		
+		table = table+'</table></tbody>';
+		keytag.append(table);
+	}
+	
+	var stream
+	function connectStream() {
+		closeStream();
+		stream = new EventSource(base + '/events');
+		stream.addEventListener('receiver', function(event) {
+			jdata = JSON.parse(event.data)
+			updateReceivers(jdata);
+			
+		}, false);
+	}
+
+	function closeStream() {
+		try {
+			stream.close();
+		} catch (e) {
+		}
+	}
+	
+</script>
+</head>
+<body>
+	<div class="navbar navbar-inverse navbar-fixed-top">
+		<div class="navbar-inner">
+			<div class="container">
+				<a class="btn btn-navbar" data-toggle="collapse"
+					data-target=".nav-collapse"> <span class="icon-bar"></span> <span
+					class="icon-bar"></span> <span class="icon-bar"></span>
+				</a> <a class="brand" href="#">Receiver</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="container">
+
+		<!-- Main hero unit for a primary marketing message or call to action -->
+		<!-- <div class="hero-unit">
+			<p>This is the central Hub administration page ...</p>
+		</div> -->
+
+		<!-- Example row of columns -->
+		
+		<div class="row">
+			<div class="span6">
+			<div class="span6">
+				<h2>Add Receiver</h2>
+				<div class="span3">
+					
+				      <input class="span3" id="s_id" placeholder="TrackingId" type="text">
+					  <input class="span3" id="s_hostname" placeholder="Hostname" type="text">
+					  <input class="span3" id="s_port" placeholder="Port" type="text">
+					  <input class="span3" id="s_numberOfImages" placeholder="Number of Images" type="text">
+					  
+				</div>
+				
+				<div class="span2">
+				<button id="addReceiverBtn" class="btn" type="button" onclick="newReceiver()">Add</button>
+				</div>
+				</div>
+				
+				<div class="span6">
+				<h2>Receivers</h2>
+				<div class="span4" id="receivers"></div>
+				</div>
+			</div>
+			
+			<div class="span6" id="receiverinfo"></div>
+			
+		</div>
+		
+		<hr>
+
+		<footer>
+			<p>Receiver - Version <span id='version'></span> - &copy; Paul Scherrer Institute 2013</p>
+		</footer>
+
+	</div>
+	<!-- /container -->
+
+	<script>
+		/* update beamlines */
+		getVersion();
+		getReceivers();
+		connectStream();
+	</script>
+
+	
+	<script>
+		window.jQuery
+				|| document
+						.write('<script src="js/vendor/jquery-1.9.1.min.js"><\/script>')
+	</script>
+
+	<script src="js/vendor/bootstrap.min.js"></script>
+
+	<script src="js/main.js"></script>
+</body>
+</html>

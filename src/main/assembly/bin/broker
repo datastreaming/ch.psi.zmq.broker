@@ -1,0 +1,42 @@
+#!/bin/bash
+
+CURRENTDIR=`pwd`
+
+# Resolve symlinks
+BASEDIR=$0
+while [ -h "$BASEDIR" ]; do
+    ls=`ls -ld "$BASEDIR"`
+    link=`expr "$ls" : '^.*-> \(.*\)$' 2>/dev/null`
+    if expr "$link" : '^/' 2> /dev/null >/dev/null; then
+        BASEDIR="$link"
+    else
+        BASEDIR="`dirname "$BASEDIR"`/$link"
+    fi
+done
+BASEDIR=`dirname "$BASEDIR"`
+
+SCRIPTNAME=`basename ${0}`
+
+APPLICATION_HOME=$BASEDIR/../..
+
+LIB_DIR=`find $BASEDIR/../lib -name "*.jar"`
+LIB_DIR=`echo $LIB_DIR | sed -e 's/ /:/g'`
+
+CLASSPATH=${APPLICATION_HOME}/config/:$LIB_DIR
+
+ARGUMENTS=
+VM_ARGUMENTS=
+for i in $@
+do
+        if [ `expr $i : '-D.*'` != '0' ] ;then
+                # Extract VM options
+                VM_ARGUMENTS="$VM_ARGUMENTS $i"
+        else
+                ARGUMENTS="$ARGUMENTS $i"
+        fi
+done
+
+
+BROKER_BASE=$BASEDIR/../
+export BROKER_BASE
+java $VM_ARGUMENTS -cp $CLASSPATH ch.psi.zmq.broker.BrokerServer $ARGUMENTS

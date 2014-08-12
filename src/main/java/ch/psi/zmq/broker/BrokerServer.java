@@ -22,6 +22,7 @@ import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.grizzly.http.server.StaticHttpHandler;
 
 import ch.psi.zmq.broker.model.Configuration;
 import sun.misc.Signal;
@@ -73,15 +74,16 @@ public class BrokerServer {
 		HttpServer server = GrizzlyHttpServerFactory.createHttpServer(baseUri, resourceConfig);
 
 		// Static content
-//		String home = System.getenv("BROKER_BASE");
-//		if (home == null) {
-//			home = "src/main/assembly";
-//		}
-//		home = home + "/www";
-//		server.getServerConfiguration().addHttpHandler(new StaticHttpHandler(home), "/static");
+		String home = System.getenv("BROKER_BASE");
+		if (home == null) {
+			home = "src/main/assembly";
+		}
+		home = home + "/www";
+		server.getServerConfiguration().addHttpHandler(new StaticHttpHandler(home), "/static");
+		
 
 		logger.info("Broker started");
-//		logger.info(String.format("Management interface available at %sstatic/", baseUri));
+		logger.info(String.format("Management interface available at %sstatic/", baseUri));
 		logger.info("Use ctrl+c to stop ...");
 
 		// Signal handling
