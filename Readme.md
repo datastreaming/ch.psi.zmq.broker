@@ -146,6 +146,22 @@ Delete configured routing:
 DELETE http://<broker>:<port>/broker/<id>
 ```
 
+### Curl Commands
+
+```
+# Get current configuration
+curl http://<broker>:<port>/broker
+
+# Delete current configuration
+curl -X DELETE http://<broker>:<port>/broker
+
+# Load new configuration
+curl -X PUT -H "Content-Type: application/json" --data '{"routing":[{ "name": "BB", "source":{ "address": "tcp://localhost:7777", "type": "PULL"},"destination": [{"address": "tcp://*:8888","type": "PUSH"}]}]}' http://<broker>:port/broker
+
+# Add new routing
+curl -X PUT -H "Content-Type: application/json" --data '{ "name": "BB", "source":{ "address": "tcp://localhost:7777", "type": "PULL"},"destination": [{"address": "tcp://*:8888","type": "PUSH"}]}' http://<broker>:<port>/broker/<myid>
+```
+
 
 # Development
 ZMQ Broker is based on https://github.com/zeromq/jeromq the Java implementation of ZMQ. It is a maven project and can be 
