@@ -22,13 +22,19 @@ message format.
 ```
 
 The broker comes with a REST API to be able to dynamically (re)configure the brokers routing and settings.
-To start the broker use `java -Xmx1024m -jar ch.psi.zmq.broker.jar`
+To start the broker use 
+
+```
+java -Xmx1024m -jar ch.psi.zmq.broker.jar
+```
 
 Optionally you can already specify a configuration file at startup via the `-c <yourConfigFile.xml>` option.
-The default port of the web server serving the REST api is 8080. If you need/want to specify a different port than this use the `-p <port>` option. 
+The default port of the web server serving the REST API is 8080. If you need/want to specify a different port than this use the `-p <port>` option. 
 
-To terminate the broker use `ctrl+c`. If it does not terminate with the first `ctrl+c` (normal shutdown) issue a second one. This will force the termination of the virtual machine.
+To terminate the broker use `ctrl+c`. If it does not terminate with the first `ctrl+c` (normal shutdown) issue a second one. This will force the 
+termination of the virtual machine.
 
+The only dependency you have is on a Java Virtual Machine 7 or greater.
 
 
 # Configuration
@@ -49,7 +55,7 @@ The basic structure of the configuration is as follows:
 </configuration>
 ```
 
-Currently following methods are supported for sources: PULL, SUB. PUSH and PUB are supported for destinations.
+Currently following methods are supported for sources: PULL, SUB. For destinations PUSH and PUB are supported.
 For destinations you can also configure a (max) frequency the messages are delivered. The `frequency` is in millisceconds and can be configured in the `destination` tag.
 
 You can specify (zero,) one or more destinations.
@@ -63,14 +69,17 @@ This feature can be used to use the broker as kind of online buffer when receivi
 ## REST
 
 Get current configuration:
+
 ```
 GET http://<broker>:<port>/broker
 ```
 
-Load given configuration:
+Load new XML configuration:
+
 ```
-GET http://<broker>:<port>/broker
-BODY
+PUT http://<broker>:<port>/broker
+HEADER -  Content-Type: application/xml
+
 <configuration>
 	<routing name="BB">
 		<source address="tcp://localhost:8888" />
@@ -79,11 +88,12 @@ BODY
 </configuration>
 ```
 
-```
-GET http://<broker>:<port>/broker
+Load new JSON configuration:
 
+```
+PUT http://<broker>:<port>/broker
 HEADER Content-Type: application/json
-BODY
+
 {
     "routing": [
         {
@@ -104,17 +114,18 @@ BODY
 ```
 
 Delete current configuration:
+
 ```
 DELETE http://<broker>:<port>/broker
 ```
 
+Add new routing:
 
-Configure new routing:
 ```
 PUT http://<broker>:<port>/broker/<id>
 
 HEADER Content-Type: application/json
-BODY
+
 {
     "source": {
         "address": "tcp://localhost:6666",
@@ -130,10 +141,10 @@ BODY
 ```
 
 Delete configured routing:
+
 ```
 DELETE http://<broker>:<port>/broker/<id>
 ```
-
 
 
 # Development
