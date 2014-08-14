@@ -19,7 +19,7 @@
 
 package ch.psi.zmq;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 /**
  * Example ZeroMQ subscriber
@@ -29,10 +29,10 @@ import org.jeromq.ZMQ;
 public class Subscriber {
 
 	public static void main(String[] args) {
-		ZMQ.Context context = ZMQ.context();
+		ZMQ.Context context = ZMQ.context(1);
 		ZMQ.Socket socket = context.socket(ZMQ.SUB);
 		
-		socket.subscribe(""); // Equivalent to: socket.setsockopt(zmq.SUBSCRIBE, "");
+		socket.subscribe("".getBytes()); // Equivalent to: socket.setsockopt(zmq.SUBSCRIBE, "");
 
 		socket.connect("tcp://localhost:8080");
 

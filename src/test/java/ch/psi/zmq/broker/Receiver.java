@@ -21,14 +21,14 @@ package ch.psi.zmq.broker;
 
 import java.util.logging.Logger;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 public class Receiver {
 	
 	private static final Logger logger = Logger.getLogger(Receiver.class.getName());
 	
 	public static void main(String[] args){
-		ZMQ.Context context = ZMQ.context();
+		ZMQ.Context context = ZMQ.context(1);
 		ZMQ.Socket socket = context.socket(ZMQ.PULL);
 		socket.connect("tcp://localhost:9090");
 //		socket.setsockopt(ZMQ.SUBSCRIBE, topicfilter);

@@ -19,7 +19,7 @@
 
 package ch.psi.zmq;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 /**
  * Example publisher
@@ -28,7 +28,7 @@ import org.jeromq.ZMQ;
  */
 public class Publisher {
 	public static void main(String[] args){
-		ZMQ.Context context = ZMQ.context();
+		ZMQ.Context context = ZMQ.context(1);
 		ZMQ.Socket socket = context.socket(ZMQ.PUB);
 		socket.bind("tcp://*:8080");
 		int counter=0;

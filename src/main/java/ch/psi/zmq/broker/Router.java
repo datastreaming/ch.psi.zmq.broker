@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 import ch.psi.zmq.broker.model.Routing;
 
@@ -62,8 +62,8 @@ public class Router implements Runnable{
 		try{
 		logger.info("Start routing: "+routing.getName());
 		terminate = false;
-		context = ZMQ.context();
-		zmq.ZError.clear(); // Clear error code
+		context = ZMQ.context(1);
+//		zmq.ZError..clear(); // Clear error code
 		
 		// Bind to destinations, i.e. create sockets.
 		for(final ch.psi.zmq.broker.model.Destination d: routing.getDestinations()){
@@ -116,7 +116,7 @@ public class Router implements Runnable{
 		in.setHWM(routing.getSource().getBuffer());
 		in.connect(routing.getSource().getAddress());
 		if(routing.getSource().getType().equals(Routing.Type.SUB)){
-			in.subscribe(""); // subscribe to all topics
+			in.subscribe("".getBytes()); // subscribe to all topics
 		}
 			
 		
