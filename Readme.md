@@ -190,3 +190,8 @@ mvn clean compile assembly:assembly
   * http://ruudud.github.io/presentations/zeromq/#/ 
   * http://java.dzone.com/articles/distributed-systems-zeromq
 
+# TODO
+  * High-watermark
+  * Error checking when adding new routings
+  * Clean termination of routes / no blocking, ...
+  
