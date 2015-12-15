@@ -1,6 +1,5 @@
-# Download / Installation
+# Installation
 
-The latest released version of the broker can be downloaded [here](http://artifacts.psi.ch/artifactory/releases/ch.psi.zmq.broker-2.4.0.zip).
 To "install" the broker just extract the distribution zip file.
 
 The only dependency you have is JVM 1.7 or greater.
