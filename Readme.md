@@ -1,12 +1,12 @@
 # Download / Installation
 
-The latest released version of the broker can be downloaded [here](http://slsyoke4.psi.ch:8081/artifactory/releases/ch.psi.zmq.broker-2.4.0.zip).
-To "install" the broker just extract the zip file.
+The latest released version of the broker can be downloaded [here](http://artifacts.psi.ch/artifactory/releases/ch.psi.zmq.broker-2.4.0.zip).
+To "install" the broker just extract the distribution zip file.
 
-The only dependency you have is on a Java Virtual Machine 7 or greater.
+The only dependency you have is JVM 1.7 or greater.
 
 # Overview
-The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ data streams. It can be used with any 
+The ZMQ Broker is a message broker for brokering, buffering and reducing ZMQ data streams. It can be used with any
 message format.
 
 ```
@@ -24,16 +24,16 @@ message format.
 ```
 
 The broker comes with a REST API to be able to dynamically (re)configure the brokers routing and settings.
-To start the broker use 
+To start the broker use
 
 ```
 bin/broker
 ```
 
 Optionally you can already specify a configuration file at startup via the `-c <yourConfigFile.xml>` option.
-The default port of the web server serving the REST API is 8080. If you need/want to specify a different port than this use the `-p <port>` option. 
+The default port of the web server serving the REST API is 8080. If you need/want to specify a different port than this use the `-p <port>` option.
 
-To terminate the broker use `ctrl+c`. If it does not terminate with the first `ctrl+c` (normal shutdown) issue a second one. This will force the 
+To terminate the broker use `ctrl+c`. If it does not terminate with the first `ctrl+c` (normal shutdown) issue a second one. This will force the
 termination of the virtual machine.
 
 After the startup there the web ui can be accessed via (note that the trailing / is important!)
@@ -44,7 +44,7 @@ http://<host>:<port>/static/
 
 
 # Configuration
-The broker can be configured via config file and/or via REST API. 
+The broker can be configured via config file and/or via REST API.
 
 ## File
 The configuration file of the broker can be specified via the `-c` option at the startup of the broker.
@@ -70,7 +70,7 @@ A buffer size can be configured for both incomming (source) and outgoing (destin
 The default buffer size (if attribute is omitted) is on both side 5. This means that the broker is keeping maximum 10 messages inside its buffer (max memory consumed ~ 10 times message size).
 
 This feature can be used to use the broker as kind of online buffer when receiving parties are not able to keep up the speed the source delivers data but still need to get all messages. If using the broker in this kind of mode tuning to the explicit setup is necessary.
-   
+
 
 ## REST
 
@@ -170,28 +170,37 @@ curl -X PUT -H "Content-Type: application/json" --data '{ "name": "BB", "source"
 
 
 # Development
-ZMQ Broker is based on https://github.com/zeromq/jeromq the Java implementation of ZMQ. It is a maven project and can be 
-build via 
+## Build
+The project is build via Gradle. It can be easily build via
 
+```bash
+./gradlew build
 ```
-mvn clean compile assembly:assembly
+
+__Notes:__ You don't have to have gradle installed on your machine. All you need is a Java JDK version >= 1.7 .
+
+The installation zip package can be build by
+
+```bash
+./gradlew distribution
 ```
+
+Afterwards the installable zip file is available in the `build/distributions` directory.
 
 
 #References
 
-  * http://www.zeromq.org/ 
-  * https://github.com/zeromq/jeromq 
+  * http://www.zeromq.org/
+  * https://github.com/zeromq/jeromq
 
   * https://learning-0mq-with-pyzmq.readthedocs.org/en/latest/pyzmq/patterns/pubsub.html
-  * http://zeromq.org/whitepapers:brokerless 
+  * http://zeromq.org/whitepapers:brokerless
   * http://java.dzone.com/category/tags/zeromq
-  * http://nichol.as/zeromq-an-introduction 
-  * http://ruudud.github.io/presentations/zeromq/#/ 
+  * http://nichol.as/zeromq-an-introduction
+  * http://ruudud.github.io/presentations/zeromq/#/
   * http://java.dzone.com/articles/distributed-systems-zeromq
 
 # TODO
   * High-watermark
   * Error checking when adding new routings
   * Clean termination of routes / no blocking, ...
-  
